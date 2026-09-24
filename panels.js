@@ -72,3 +72,34 @@ function renderDeskStrategies(data){
  const forecast=(data.inputStatus?.inputs||[]).find(r=>r.id==='calibration');
  $('strategy-roster').innerHTML=`<div class="strategy-roster">${rows.map(g=>{const cities=[...new Set(g.configured.map(r=>r.city))];const f=g.name==='Calibrated forecast';return `<article class="strategy-tile"><div><h3>${escapeHTML(g.name)}</h3><span class="input-badge ${running?'good':''}">${running?'Enabled':'Configured · stopped'}</span></div><p class="strategy-cities">${escapeHTML(cities.length===5?'All five cities':cities.map(c=>names[c]||c).join(', '))}</p><p>${escapeHTML(g.text)}</p><small>${escapeHTML(g.horizon)}${f&&forecast?' · '+escapeHTML(inputLabels[forecast.status]||'Waiting for inputs'):''}</small></article>`}).join('')}</div>${map.some(r=>r.strategyId==='MIAMI317_HELD_MISSING_FIRST_LEG_PROBABILITY')?'<p class="strategy-held"><strong>Held:</strong> Historical Miami maker — missing first-leg probability for Kelly sizing. Miami’s strong/fallback strategy remains enabled.</p>':''}<p class="strategy-footnote">Forecast entries react to available forecasts and prices at any time. Historical strategies retain their own schedules; all entries require fresh inputs and shared account checks.</p>`;
 }
+
+document.addEventListener('DOMContentLoaded',()=>{
+ const form=document.getElementById('reserve-form'),input=document.getElementById('reserve-amount'),button=document.getElementById('reserve-save'),note=document.getElementById('reserve-status');
+ if(!form)return;let state=null,editRevision=null,dirty=false,busy=false,fetching=false;
+ input.addEventListener('input',()=>{if(!dirty)editRevision=state?.revision;dirty=true;});
+ async function refresh(){
+  if(fetching)return;fetching=true;
+  try{
+   const response=await fetch('/api/protected-balance',{cache:'no-store',signal:AbortSignal.timeout(8000)});
+   if(!response.ok)throw Error('Protected balance unavailable');state=await response.json();
+   input.disabled=!state.supported||busy;button.disabled=!state.supported||busy||!!state.error;
+   if(!dirty)input.value=state.protectedReserveUSD??'';
+   note.textContent=state.error||(!state.supported?'Update trader to enable this control.':state.applied?'Applied · $'+state.protectedReserveUSD+' protected':!state.running?'Saved · applies when the trader starts.':'Saved · awaiting trader acknowledgement.');
+   if(dirty&&editRevision!==state.revision)note.textContent='Changed elsewhere. Your edit is kept; refresh the page before saving.';
+  }catch{button.disabled=true;note.textContent='Connection unavailable · saved setting is unchanged.';}
+  finally{fetching=false;}
+ }
+ form.addEventListener('submit',async event=>{
+  event.preventDefault();if(!state?.supported||busy||!form.reportValidity())return;
+  const value=input.value.trim(),revision=dirty?editRevision:state.revision;
+  if(!/^(0|[1-9][0-9]{0,8})(\.[0-9]{1,2})?$/.test(value)){note.textContent='Enter dollars with at most two decimal places.';return;}
+  busy=true;button.disabled=true;input.disabled=true;note.textContent='Saving…';
+  try{
+   const response=await fetch('/api/protected-balance',{method:'POST',headers:{'Content-Type':'application/json','X-Weather-Trader-Control':state.csrf},body:JSON.stringify({revision,protectedReserveUSD:value}),signal:AbortSignal.timeout(10000)});
+   const result=await response.json();if(!response.ok)throw Error(result.error||'Save not confirmed');
+   dirty=false;editRevision=null;input.value=result.protectedReserveUSD;note.textContent='Saved · awaiting trader acknowledgement.';
+  }catch(error){note.textContent=error.message||'Save not confirmed. Refresh before retrying.';busy=false;input.disabled=false;return;}
+  busy=false;await refresh();
+ });
+ refresh();setInterval(refresh,5000);window.addEventListener('weather-auth-changed',refresh);
+});
