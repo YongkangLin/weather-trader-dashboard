@@ -545,7 +545,7 @@ function render(data){
  renderStrategyGuide(data);
  $('last-update').textContent='Account '+ageText(a.observedNs)+' · stream packet '+ageText(data.generatedAtNs)+' · '+(connected?'connected':'reconnecting');
 }
-function setConnection(value){connected=value;$('connection').className='connection '+(value?'connected':'disconnected');$('connection-text').textContent=value?'Live · 5s refresh':'Reconnecting'}
+function setConnection(value){connected=value;$('connection').className='connection '+(value?'connected':'disconnected');$('connection-text').textContent=value?'Live stream':'Reconnecting'}
 async function refresh(){if(inFlight)return;inFlight=true;$('refresh').disabled=true;const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),5000);try{const response=await fetch('/api/status',{cache:'no-store',signal:controller.signal,headers:{Accept:'application/json'}});if(!response.ok)throw Error('Status unavailable');const data=await response.json();if(!data||typeof data!=='object'||!Array.isArray(data.cities))throw Error('Invalid status');latest=data;lastSuccess=Date.now();setConnection(true);render(data)}catch{setConnection(false);if(latest)render(latest);else{$('banner').textContent='The Mac is not connected yet. It will reconnect automatically.';$('banner').classList.add('show')}}finally{clearTimeout(timer);inFlight=false;$('refresh').disabled=false}}
 for(const [id,offset] of [['highs-current',0],['highs-previous',-1]])$(id).addEventListener('click',()=>{dailyHighOffset=offset;if(latest)renderDailyHighs(latest.observedHighs,latest.generatedAtNs,latest.settlementHighs,latest.nwsHourlyHighs)});
 $('inputs-all').addEventListener('click',()=>{inputAttentionOnly=false;if(latest)renderInputStatus(latest.inputStatus)});
