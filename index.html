@@ -545,7 +545,7 @@ function render(data){
  renderStrategyGuide(data);
  $('last-update').textContent='Account '+ageText(a.observedNs)+' · stream packet '+ageText(data.generatedAtNs)+' · '+(connected?'connected':'reconnecting');
 }
-function setConnection(value){connected=value;$('connection').className='connection '+(value?'connected':'disconnected');$('connection-text').textContent=value?'Live stream':'Reconnecting'}
+function setConnection(value){connected=value;$('connection').className='connection '+(value?'connected':'disconnected');$('connection-text').textContent=value?'Live · 5s refresh':'Reconnecting'}
 async function refresh(){if(inFlight)return;inFlight=true;$('refresh').disabled=true;const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),5000);try{const response=await fetch('/api/status',{cache:'no-store',signal:controller.signal,headers:{Accept:'application/json'}});if(!response.ok)throw Error('Status unavailable');const data=await response.json();if(!data||typeof data!=='object'||!Array.isArray(data.cities))throw Error('Invalid status');latest=data;lastSuccess=Date.now();setConnection(true);render(data)}catch{setConnection(false);if(latest)render(latest);else{$('banner').textContent='The Mac is not connected yet. It will reconnect automatically.';$('banner').classList.add('show')}}finally{clearTimeout(timer);inFlight=false;$('refresh').disabled=false}}
 for(const [id,offset] of [['highs-current',0],['highs-previous',-1]])$(id).addEventListener('click',()=>{dailyHighOffset=offset;if(latest)renderDailyHighs(latest.observedHighs,latest.generatedAtNs,latest.settlementHighs,latest.nwsHourlyHighs)});
 $('inputs-all').addEventListener('click',()=>{inputAttentionOnly=false;if(latest)renderInputStatus(latest.inputStatus)});
@@ -567,9 +567,9 @@ for(const control of [$('feed-city'),$('feed-strategy')]){
 }
 $('feed-city').addEventListener('change',()=>{if(latest)renderFeed(latest,true)});
 $('feed-strategy').addEventListener('change',()=>{if(latest)renderFeed(latest,true)});
-function openLinkedSection(){const id=location.hash.slice(1);if(id==='positions')$('positions').open=true;if(id==='performance')$('performance').open=true;if(id==='strategy-guide')$('strategy-guide').open=true;}
+function openLinkedSection(){const id=location.hash.slice(1);if(['positions','performance','strategy-guide'].includes(id)&&$(id))$(id).open=true;}
 window.addEventListener('hashchange',openLinkedSection);openLinkedSection();
-for(const section of ['positions'])$(section+'-content').addEventListener('click',event=>{
+for(const section of ['positions'])$(section+'-content')?.addEventListener('click',event=>{
  const summary=event.target.closest('summary'),card=summary?.parentElement;
  if(!card?.classList.contains('trade-card')||card.open)return;
  $(section+'-content').querySelectorAll('.trade-card[open]').forEach(other=>{if(other!==card)other.open=false;});
