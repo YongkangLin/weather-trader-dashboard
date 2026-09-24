@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   try{
    const response=await fetch('/api/protected-balance',{method:'POST',headers:{'Content-Type':'application/json','X-Weather-Trader-Control':state.csrf},body:JSON.stringify({revision,protectedReserveUSD:value}),signal:AbortSignal.timeout(10000)});
    const result=await response.json();if(!response.ok)throw Error(result.error||'Save not confirmed');
-   dirty=false;editRevision=null;input.value=result.protectedReserveUSD;note.textContent='Saved · awaiting trader acknowledgement.';
+   dirty=false;editRevision=null;input.value=result.protectedReserveUSD;note.textContent='Saved · awaiting trader acknowledgement.';window.dispatchEvent(new Event('capital-setting-saved'));
   }catch(error){note.textContent=error.message||'Save not confirmed. Refresh before retrying.';busy=false;input.disabled=false;return;}
   busy=false;await refresh();
  });
