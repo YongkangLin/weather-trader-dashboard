@@ -86,7 +86,7 @@ const nsDate=v=>present(v)&&Number.isFinite(Number(v))?new Date(Number(v)/1e6):n
 const validDate=d=>d&&!Number.isNaN(d.getTime());
 const localZone=Intl.DateTimeFormat().resolvedOptions().timeZone;
 function dateText(v,options={}){const d=nsDate(v);return validDate(d)?new Intl.DateTimeFormat('en-US',options).format(d):'—'}
-function ageText(v){const d=nsDate(v);if(!validDate(d))return'unknown';const seconds=Math.round((Date.now()-d.getTime())/1000);if(seconds< -5)return'future timestamp';if(seconds<5)return'just now';if(seconds<60)return`${seconds}s ago`;if(seconds<3600)return`${Math.floor(seconds/60)}m ${seconds%60}s ago`;return`${Math.floor(seconds/3600)}h ${Math.floor(seconds%3600/60)}m ago`}
+function ageText(v){const d=nsDate(v);if(!validDate(d))return'unknown';const seconds=Math.floor((Date.now()-d.getTime())/1000);if(seconds< -5)return'future timestamp';if(seconds<2)return'just now';if(seconds<60)return`${Math.max(0,seconds)}s ago`;if(seconds<3600)return`${Math.floor(seconds/60)}m ${seconds%60}s ago`;return`${Math.floor(seconds/3600)}h ${Math.floor(seconds%3600/60)}m ago`}
 function numberText(v){return present(v)&&Number.isFinite(Number(v))?new Intl.NumberFormat('en-US',{maximumFractionDigits:4}).format(Number(v)):'—'}
 const icon=`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4h12v16H6V4Zm3 5h6m-6 4h6m-6 4h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const empty=(title,body)=>`<div class="empty"><div class="empty-icon">${icon}</div><strong>${escapeHTML(title)}</strong><p>${escapeHTML(body)}</p></div>`;
@@ -113,6 +113,9 @@ function plainReason(value){
  if(u.includes('TWO_VALID_OBSERVATIONS')||u.includes('TWO_DISTINCT_OBSERVATIONS'))return 'Two distinct valid station reports cleared the bracket check.';
  if(u.includes('NO_TWO_OBSERVATIONS'))return 'Waiting for two distinct valid station observations and an executable NO edge.';
  if(u.includes('DUPLICATE_OR_OPPOSING'))return 'A duplicate or opposing order already occupies this market.';
+ if(u.includes('OUTSIDE_TABLE_TIME_WINDOW'))return 'The final five-minute window is open, but this BTC route only quotes in its 61–180-second strategy window.';
+ if(u.includes('OUTSIDE_LAST_FIVE_MINUTES'))return 'The BTC contract is outside its final five-minute entry window.';
+ if(u.includes('USER_PAUSED_WEATHER'))return 'You manually paused Weather entries from the dashboard.';
  if(u.includes('PILOT_CITY_DATE_CAP')||u.includes('PILOT_OVERALL_CAP'))return 'The shared pilot exposure cap blocks another order.';
  if(u.includes('STALE')||u.includes('EXPIRED'))return 'The prices or inputs are too old. Waiting for fresh data.';
  if(u.includes('SOURCE_ACCOUNT_SIGNAL_ALREADY_ATTEMPTED'))return 'This opportunity has already been attempted. Waiting for new information.';
@@ -529,12 +532,15 @@ function render(data){
  const a=data.account||{},p=data.process||{},k=data.kelly||{},retained=data.retained,t=data.performance?.total||{};
  const fresh=recordFresh(p.heartbeatNs,90),accountDisplayLimit=Math.max(Number(a.maxAgeSeconds)||90,20),accountFresh=recordFresh(a.observedNs,accountDisplayLimit);
  const paused=present(a.configuredKellyFraction)&&Number(a.configuredKellyFraction)===0;
+ const weatherControls=data.productControls?.products||{};
+ const weatherManuallyPaused=weatherControls.weather===false;
  const decisionFresh=retained?fresh:recordFresh(k.observedNs,Number(k.maxQuoteAgeSeconds)||10);
  let title='Running · waiting to trade',reason=plainReason(k.reason),next='The released strategy checks for entries automatically.';
  if(!connected){title='Connection interrupted';reason='Saved values are shown. Current activity is unconfirmed.';next='Reconnecting automatically.';}
  else if(['HALTED','ERROR'].includes(p.status)){title='Trader needs attention';reason='A system check stopped the trader.';next='New entries are paused.';if(String(p.reason||k.reason).includes('ORIGINAL_WEATHER_CAPACITY_REACHED')){title='Weather feed needs repair';reason='The weather cache reached its storage limit.';next='Trading is paused until the repair is applied.';}}
  else if(!p.running){title='Trader is stopped';reason='No new trades are being placed by this program.';next='';}
  else if(!fresh){title='Trader update delayed';reason='Waiting for a current heartbeat.';next='';}
+ else if(weatherManuallyPaused){title='New purchases paused';reason='You manually paused Weather entries from the dashboard.';next='The trader is running. Existing Weather positions, exits and account checks continue.';}
  else if(accountFresh&&data.capital?.fresh&&data.capital?.newRiskHoldReason){title='New purchases paused';reason=riskPauseReason(data.capital.newRiskHoldReason);next='The trader is running. Exits and account checks continue.';}
  else if(paused){title='New purchases paused';reason='New buying is disabled in the current settings.';next='The trader continues checking existing positions.';}
  else if(retained?.runtimeStatus==='HOLD'){title='Waiting for inputs';reason=plainReason(retained.runtimeReason);next='New entries wait for complete source and account checks.';}
@@ -554,7 +560,7 @@ function render(data){
  renderProductDesk(data);
  renderBitcoinChart(data.btcChart);
  renderDailyHighs(data.observedHighs,data.generatedAtNs,data.settlementHighs,data.nwsHourlyHighs);
- $('last-update').textContent='Account '+ageText(a.observedNs)+' · stream packet '+ageText(data.generatedAtNs)+' · '+(connected?'connected':'reconnecting');
+ $('last-update').textContent='Account '+ageText(a.observedNs)+' · trader heartbeat '+ageText(p.heartbeatNs)+' · '+(connected?'connected':'reconnecting');
 }
 function setConnection(value){connected=value;$('connection').className='connection '+(value?'connected':'disconnected');$('connection-text').textContent=value?'Live · 5s refresh':'Reconnecting'}
 let bitcoinChart=null,bitcoinChartInFlight=false;
