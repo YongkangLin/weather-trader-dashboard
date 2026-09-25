@@ -119,7 +119,7 @@ function renderSharedReserve(data){
  const reserve=Number(r.protectedReserveUSD),remaining=Number(r.remainingCapitalUSD);
  if(!Number.isFinite(reserve)||!Number.isFinite(remaining)){el.textContent='Capital breakdown unavailable.';return;}
  const values=[['Capital before reserve',reserve+remaining],['Total reserve · applied once',reserve],['Remaining for both traders',remaining],['Allocation per trader',r.products?.btc?.allocationUSD]];
- el.innerHTML=`<dl>${values.map(([label,value])=>`<div><dt>${escapeHTML(label)}</dt><dd>${escapeHTML(money(value))}</dd></div>`).join('')}</dl><p>Withdrawable cash ${escapeHTML(money(c.withdrawableCashUSD))} · bonus credit ${escapeHTML(money(c.bonusUSD))} excluded by the current capital policy. Capital includes only the conservative value of eligible holdings.${c.reserveDiffersFromAccount?' Saved reserve change is awaiting trader recalculation.':''}${!c.fresh?' Last reconciled account values; awaiting a fresh check.':''}</p>`;
+ el.innerHTML=`<dl>${values.map(([label,value])=>`<div><dt>${escapeHTML(label)}</dt><dd>${escapeHTML(money(value))}</dd></div>`).join('')}</dl><p>One total reserve, then an equal split. Existing exposure and each trader’s own risk checks limit new orders.${r.capitalBalanceBasis!=='TOTAL_TRADABLE_BALANCE_V1'&&String(data.releaseUpdate?.releaseId||'').includes('total-tradable')?' The prepared Update switches both traders to your total tradable balance.':''}${c.reserveDiffersFromAccount?' Saved reserve change is awaiting trader recalculation.':''}${!c.fresh?' Last reconciled account values; awaiting a fresh check.':''}</p>`;
 }
 let productControlState=null, traderServiceState=null, productBusy=false, productLatest=null;
 function bitcoinStatus(data,controls){
