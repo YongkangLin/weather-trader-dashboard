@@ -126,7 +126,10 @@ function bitcoinStatus(data,controls){
  const p=data.process||{},b=data.btc||{},risk=data.productRisk?.products?.btc,why=String(b.reason||''),whyKey=why.toUpperCase();
  const state=(title,reason,next='',tone='waiting')=>({title,reason,next,tone});
  if(!connected)return state('Connection interrupted','Saved status is shown. Current BTC activity is unconfirmed.','Reconnecting automatically.');
- if(['HALTED','ERROR'].includes(p.status))return state('Trader needs attention','The service has stopped new BTC entries.','Account reconciliation must recover before trading.','alert');
+ if(['HALTED','ERROR'].includes(p.status)){
+  if(String(p.reason||'').includes('ISOLATED_RELEASE_VERIFICATION_TIMED_OUT'))return state('Trader stopped during integrity check','Release verification timed out; the account was already reconciled.','Review and apply the Bitcoin update below.','alert');
+  return state('Trader needs attention','A system check stopped new BTC entries.','Review the recorded reason before restarting.','alert');
+ }
  if(!p.running)return state('Trader is stopped','No new BTC entries are being placed.','','stopped');
  if(!recordFresh(p.heartbeatNs,90)||!recordFresh(b.atNs,30))return state('BTC update delayed','Waiting for a current strategy check.');
  if(!controls.runtimeSupportsControls)return state('BTC update required','The running release does not support BTC controls.');
