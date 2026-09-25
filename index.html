@@ -62,15 +62,6 @@ body{font-size:14px;color:#20324a}main{margin:0;width:100%;padding:26px 22px}.ma
   <div class="desk-strip" id="desk-strip" hidden></div>
   <section class="panel reserve-panel" aria-labelledby="reserve-title"><div class="panel-head"><div><h2 id="reserve-title">Protected balance</h2><p class="panel-subtitle">Cash kept out of new purchases</p></div></div><form id="reserve-form"><label class="visually-hidden" for="reserve-amount">Protected balance in dollars</label><div class="currency-input"><span aria-hidden="true">$</span><input id="reserve-amount" type="number" min="0" max="999999999.99" step="0.01" inputmode="decimal" placeholder="0.00" required></div><button id="reserve-save" type="submit" disabled>Save</button><span id="reserve-status" role="status" aria-live="polite">Checking…</span></form><p class="reserve-note">Kept aside from new purchases in every city.</p></section></div>
   <section class="panel daily-highs-panel" id="daily-highs" aria-labelledby="daily-highs-title"><div class="panel-head"><div><h2 id="daily-highs-title">Daily highs</h2><p class="panel-subtitle">Five stations · observed and official highs</p></div><span class="count" id="daily-highs-count">Checking</span></div><div class="highs-toolbar"><div class="input-filter" aria-label="Settlement report day"><button id="highs-current" aria-pressed="true">Current day</button><button id="highs-previous" aria-pressed="false">Previous day</button></div><span class="highs-units">Degrees Fahrenheit</span></div><div id="daily-highs-grid" class="daily-highs-grid"></div><p class="daily-highs-note">Observed highs are provisional. Only a completed NWS daily report is shown as settled.</p></section>
-  <details class="desk-details" id="desk-details"><summary><span class="details-label">Sources &amp; strategies</span><span>Risk checks, model inputs and recent activity</span></summary><div class="diagnostic-note" id="diagnostic-note" hidden><strong>Last system message</strong><code id="diagnostic-reason"></code></div>
-  <section class="panel capital-panel" aria-labelledby="capital-title"><div class="panel-head"><h2 id="capital-title">Capital &amp; risk</h2><span id="capital-status">Checking…</span></div><div id="capital-content"></div></section>
-  <section class="panel strategy-panel" id="strategies" aria-labelledby="strategies-title"><div class="panel-head"><div><h2 id="strategies-title">Trading strategies</h2><p class="panel-subtitle">Shared account · Kelly sizing · outcome concentration limits</p></div><span class="count" id="strategies-count">Checking</span></div><div id="strategy-roster"></div></section>
-  <section class="panel input-panel" id="data-inputs" aria-labelledby="inputs-title"><div class="panel-head"><div><h2 id="inputs-title">Data inputs</h2><p class="panel-subtitle">Account, markets and weather · actual trader inputs</p></div><span class="count" id="inputs-count">Checking</span></div><div id="inputs-overview" class="input-overview" role="status"></div><div class="input-filter"><button type="button" id="inputs-all" aria-pressed="true">All inputs</button><button type="button" id="inputs-attention" aria-pressed="false">Needs attention</button></div><div id="inputs-list" class="input-list"></div><details class="input-cities" id="input-city-details"><summary>All five cities · same-day and next-day readiness</summary><div id="inputs-matrix" class="input-matrix"></div></details></section>
-  <section class="primary-grid" id="live-activity" aria-label="Live feed">
-    <article class="panel feed-panel"><div class="panel-head"><div><h2>Recent evaluations</h2><p class="panel-subtitle">Checks and provisional estimates · these are not orders</p></div><span class="count" id="feed-count">—</span></div><div class="feed-toolbar"><label>City<select id="feed-city"><option value="ALL">All cities</option></select></label><label>Strategy<select id="feed-strategy"><option value="ALL">All strategies</option></select></label><span class="feed-live"><span class="dot"></span><span id="feed-live-text">Streaming</span></span></div><div id="feed-content"></div></article>
-  </section>
-  <details class="detail-drawer" id="strategy-guide"><summary>Strategy guide · meanings and inputs <span id="strategy-guide-status">—</span></summary><div id="strategy-guide-content"></div></details>
-  </details>
   <footer class="footer" id="last-update">Connecting to live updates…</footer>
 </div></main>
 <script>
@@ -529,7 +520,7 @@ function render(data){
  const decisionFresh=retained?fresh:recordFresh(k.observedNs,Number(k.maxQuoteAgeSeconds)||10);
  let title='Running · waiting to trade',reason=plainReason(k.reason),next='The released strategy checks for entries automatically.';
  if(!connected){title='Connection interrupted';reason='Saved values are shown. Current activity is unconfirmed.';next='Reconnecting automatically.';}
- else if(['HALTED','ERROR'].includes(p.status)){title='Trader needs attention';reason='A system check stopped the trader. The full message is in Sources & strategies.';next='New entries are paused.';if(String(p.reason||k.reason).includes('ORIGINAL_WEATHER_CAPACITY_REACHED')){title='Weather feed needs repair';reason='The weather cache reached its storage limit.';next='Trading is paused until the repair is applied.';}}
+ else if(['HALTED','ERROR'].includes(p.status)){title='Trader needs attention';reason='A system check stopped the trader.';next='New entries are paused.';if(String(p.reason||k.reason).includes('ORIGINAL_WEATHER_CAPACITY_REACHED')){title='Weather feed needs repair';reason='The weather cache reached its storage limit.';next='Trading is paused until the repair is applied.';}}
  else if(!p.running){title='Trader is stopped';reason='No new trades are being placed by this program.';next='';}
  else if(!fresh){title='Trader update delayed';reason='Waiting for a current heartbeat.';next='';}
  else if(accountFresh&&data.capital?.fresh&&data.capital?.newRiskHoldReason){title='New purchases paused';reason=riskPauseReason(data.capital.newRiskHoldReason);next='The trader is running. Exits and account checks continue.';}
@@ -543,50 +534,18 @@ function render(data){
  const exitCheck=retained?.exitEvaluation;
  if(connected&&p.running&&fresh&&recordFresh(exitCheck?.observedNs,90)&&exitCheck.near99Count>0){next+=` Latest exit review: ${exitCheck.near99Count} at the 99¢ trigger; ${exitCheck.heldByValueCount} held because selling was worth less. Reinvestment benefit is not yet included.`;}
  $('trader-status').dataset.tone=!connected?'waiting':['HALTED','ERROR'].includes(p.status)?'alert':!p.running?'stopped':title==='Watching markets'?'good':'waiting';
- const diagnostic=String(p.reason||'');$('diagnostic-note').hidden=!diagnostic;$('diagnostic-reason').textContent=diagnostic;
  $('decision-title').textContent=title;$('decision-explanation').textContent=reason;$('decision-next').textContent=next;
  $('banner').classList.remove('show');
  const version=String(p.release||'').match(/-r(\d+)(?:-|$)/)?.[1];
  $('desk-strip').textContent=(p.running?(p.release===p.availableRelease?'Published release running':'Release update pending'):'Trader stopped · selected '+(p.availableRelease||'unknown'))+(p.running&&version?' · r'+version:'');
- renderCapital(data.capital);
- renderDeskStrategies(data);
  renderDailyHighs(data.observedHighs,data.generatedAtNs,data.settlementHighs,data.nwsHourlyHighs);
- renderInputStatus(data.inputStatus);
- // City input detail cards were replaced by the filtered live feed.
- renderLivePanels(data);
- renderStrategyGuide(data);
  $('last-update').textContent='Account '+ageText(a.observedNs)+' · stream packet '+ageText(data.generatedAtNs)+' · '+(connected?'connected':'reconnecting');
 }
 function setConnection(value){connected=value;$('connection').className='connection '+(value?'connected':'disconnected');$('connection-text').textContent=value?'Live · 5s refresh':'Reconnecting'}
 window.addEventListener('capital-setting-saved',()=>refresh());
 async function refresh(){if(inFlight)return;inFlight=true;$('refresh').disabled=true;const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),5000);try{const response=await fetch('/api/status',{cache:'no-store',signal:controller.signal,headers:{Accept:'application/json'}});if(!response.ok)throw Error('Status unavailable');const data=await response.json();if(!data||typeof data!=='object'||!Array.isArray(data.cities))throw Error('Invalid status');latest=data;lastSuccess=Date.now();setConnection(true);render(data)}catch{setConnection(false);if(latest)render(latest);else{$('banner').textContent='Waiting for your Mac. Reconnecting automatically.';$('banner').classList.add('show')}}finally{clearTimeout(timer);inFlight=false;$('refresh').disabled=false}}
 for(const [id,offset] of [['highs-current',0],['highs-previous',-1]])$(id).addEventListener('click',()=>{dailyHighOffset=offset;if(latest)renderDailyHighs(latest.observedHighs,latest.generatedAtNs,latest.settlementHighs,latest.nwsHourlyHighs)});
-$('inputs-all').addEventListener('click',()=>{inputAttentionOnly=false;if(latest)renderInputStatus(latest.inputStatus)});
-$('inputs-attention').addEventListener('click',()=>{inputAttentionOnly=true;if(latest)renderInputStatus(latest.inputStatus)});
 $('refresh').addEventListener('click',refresh);
-function releaseFeedInteraction(){
- setTimeout(()=>{
-  const active=document.activeElement;
-  feedFocused=active===$('feed-city')||active===$('feed-strategy');
-  if(feedHovering||feedFocused)return;
-  if(feedDeferred&&latest)renderFeed(latest,true);
- },0);
-}
-for(const control of [$('feed-city'),$('feed-strategy')]){
- control.addEventListener('pointerenter',()=>{feedHovering=true});
- control.addEventListener('focus',()=>{feedFocused=true});
- control.addEventListener('pointerleave',()=>{feedHovering=false;releaseFeedInteraction()});
- control.addEventListener('blur',()=>{feedFocused=false;releaseFeedInteraction()});
-}
-$('feed-city').addEventListener('change',()=>{if(latest)renderFeed(latest,true)});
-$('feed-strategy').addEventListener('change',()=>{if(latest)renderFeed(latest,true)});
-function openLinkedSection(){const id=location.hash.slice(1);if(['strategies','data-inputs','live-activity','strategy-guide'].includes(id))$('desk-details').open=true;if(['positions','performance','strategy-guide','desk-details'].includes(id)&&$(id))$(id).open=true;}
-window.addEventListener('hashchange',openLinkedSection);openLinkedSection();
-for(const section of ['positions'])$(section+'-content')?.addEventListener('click',event=>{
- const summary=event.target.closest('summary'),card=summary?.parentElement;
- if(!card?.classList.contains('trade-card')||card.open)return;
- $(section+'-content').querySelectorAll('.trade-card[open]').forEach(other=>{if(other!==card)other.open=false;});
-});
 let statusStream=null;
 function streamStatus(){
  if(!window.EventSource)return;
