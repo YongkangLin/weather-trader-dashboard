@@ -110,5 +110,75 @@ function renderCapital(c){
  status.textContent=c.fresh?'Current account check':'Last recorded · awaiting refresh';
  const fact=(label,value)=>`<div><dt>${escapeHTML(label)}</dt><dd>${value==null?'—':escapeHTML(money(value))}</dd></div>`;
  const dd=c.drawdown||{},pct=v=>v==null?'—':(Number(v)*100).toFixed(1)+'%';
- el.innerHTML=`<dl class="capital-grid">${fact('Withdrawable cash',c.withdrawableCashUSD)}${fact('Bonus credit · separate',c.bonusUSD)}${fact('Protected amount',c.protectedUSD)}${fact('Held position cost',c.heldCostUSD)}${fact('Pending commitments',c.committedUSD)}${fact('Conservative position value',c.markedClaimsUSD)}${fact('Trading bankroll',c.bankrollUSD)}${fact('Remaining capacity · upper bound',c.remainingCapacityUSD)}</dl><p class="capital-note">${c.active?'Quarter Kelly · shared caps: 5% losing outcome, 15% city/day, 25% city, 50% total. Unquoted position quantity has zero risk value.':'Conservative risk update is not active. Figures follow the running policy; activate the update to enable quarter Kelly and the tighter limits.'}</p>${!c.available?'<p class="capital-alert">'+escapeHTML(c.reason||'Risk inputs unavailable')+'</p>':''}${Number(c.reserveShortfallUSD)>0?'<p class="capital-alert">Withdrawable cash is '+escapeHTML(money(c.reserveShortfallUSD))+' below your protected amount. Bonus is not protected cash.</p>':''}${c.reserveDiffersFromAccount?'<p class="capital-note">Limits reflect your saved reserve; trader acknowledgement is pending.</p>':''}${c.active?'<p class="capital-note">Daily drawdown '+pct(dd.dailyDrawdownFraction)+' · peak drawdown '+pct(dd.peakDrawdownFraction)+'. '+(dd.dailyLatched?'Daily brake stays on until the next account day. ':'')+(dd.peakLatched?'Peak brake requires review before new risk. ':'')+'Account day: Los Angeles time.</p>':''}${c.newRiskHoldReason?'<p class="capital-alert">New risk paused: '+escapeHTML(String(c.newRiskHoldReason).replaceAll('_',' ').toLowerCase())+'. Closing and reconciliation remain available.</p>':''}${c.breaches?.length?'<details class="capital-breaches"><summary>'+c.breaches.length+' existing limit breaches</summary><ul>'+c.breaches.map(b=>'<li>'+escapeHTML(b.scope+' · '+b.identity)+': '+escapeHTML(money(b.exposureUSD))+' / '+escapeHTML(money(b.limitUSD))+'</li>').join('')+'</ul><p>Additions to breached exposures are blocked. Existing positions are not forcibly sold.</p></details>':''}<p class="capital-note">Capacity is shared across strategies and repeat purchases, before individual outcome limits and order checks. This panel is not profit or liquidation proceeds.</p>`;
+ el.innerHTML=`<dl class="capital-grid">${fact('Withdrawable cash',c.withdrawableCashUSD)}${fact('Bonus credit · separate',c.bonusUSD)}${fact('Protected amount',c.protectedUSD)}${fact('Held position cost',c.heldCostUSD)}${fact('Pending commitments',c.committedUSD)}${fact('Conservative position value',c.markedClaimsUSD)}${fact('Trading bankroll',c.bankrollUSD)}${fact('Remaining capacity · upper bound',c.remainingCapacityUSD)}</dl><p class="capital-note">${c.active?'Quarter Kelly · limits apply within each trader allocation after the split update. Unquoted position quantity has zero risk value.':'Conservative risk update is not active. Figures follow the running policy; activate the update to enable quarter Kelly and the tighter limits.'}</p>${!c.available?'<p class="capital-alert">'+escapeHTML(c.reason||'Risk inputs unavailable')+'</p>':''}${Number(c.reserveShortfallUSD)>0?'<p class="capital-alert">Withdrawable cash is '+escapeHTML(money(c.reserveShortfallUSD))+' below your protected amount. Bonus is not protected cash.</p>':''}${c.reserveDiffersFromAccount?'<p class="capital-note">Limits reflect your saved reserve; trader acknowledgement is pending.</p>':''}${c.active&&!c.independentProducts?'<p class="capital-note">Daily drawdown '+pct(dd.dailyDrawdownFraction)+' · peak drawdown '+pct(dd.peakDrawdownFraction)+'. '+(dd.dailyLatched?'Daily brake stays on until the next account day. ':'')+(dd.peakLatched?'Peak brake requires review before new risk. ':'')+'Account day: Los Angeles time.</p>':''}${c.newRiskHoldReason?'<p class="capital-alert">New risk paused: '+escapeHTML(String(c.newRiskHoldReason).replaceAll('_',' ').toLowerCase())+'. Closing and reconciliation remain available.</p>':''}${c.breaches?.length?'<details class="capital-breaches"><summary>'+c.breaches.length+' existing limit breaches</summary><ul>'+c.breaches.map(b=>'<li>'+escapeHTML(b.scope+' · '+b.identity)+': '+escapeHTML(money(b.exposureUSD))+' / '+escapeHTML(money(b.limitUSD))+'</li>').join('')+'</ul><p>Additions to breached exposures are blocked. Existing positions are not forcibly sold.</p></details>':''}<p class="capital-note">Each trader has separate exposure and drawdown limits. The shared wallet only constrains available cash. This panel is not profit or liquidation proceeds.</p>`;
 }
+let productControlState=null, traderServiceState=null, productBusy=false, productLatest=null;
+function renderProductDesk(data){
+ productLatest=data;
+ const el=document.getElementById('product-cards');if(!el)return;
+ const controls=productControlState||data.productControls||{},accounting=data.productAccounting?.products||{};
+ const supported=controls.runtimeSupportsControls,applied=supported&&controls.appliedRevision===controls.revision;
+ const process=data.process||{},btc=data.btc||{},live=recordFresh(process.heartbeatNs,90)&&process.running;
+ const opened=new Set(Array.from(el.querySelectorAll('details[open]')).map(x=>x.dataset.product));
+ el.innerHTML=['weather','btc'].map(id=>{
+  const enabled=controls.products?.[id],a=accounting[id],isBTC=id==='btc';
+  const title=isBTC?'Bitcoin':'Weather';
+  let state=!supported?'Update required':!applied?'Applying setting':enabled?'Entries enabled':'Entries paused';
+  if(!live&&supported)state='Service stopped · '+(enabled?'enabled when started':'paused');
+  const reason=isBTC?(recordFresh(btc.atNs,30)?({USER_PAUSED_BTC:'New BTC entries are paused.',OUTSIDE_LAST_FIVE_MINUTES:'Waiting for the final five-minute entry window.',BTC_METADATA_PENDING:'Waiting for the next BTC contract.'}[btc.reason]||String(btc.reason||btc.status||'Watching').replaceAll('_',' ').toLowerCase()):'Waiting for BTC runtime'):
+    enabled?'Five city forecasts · current weather strategy':'New entries paused; existing positions stay monitored';
+  const stat=(label,value)=>`<div><dt>${escapeHTML(label)}</dt><dd>${value==null?'—':escapeHTML(money(value))}</dd></div>`;
+  const risk=data.productRisk?.products?.[id];
+  const riskText=risk?`<dl class="product-metrics">${stat('Capital · 50% after reserve',risk.allocationUSD)}${stat('Own total exposure cap',risk.limits?.totalUSD)}${stat('Available cash capacity',risk.cashCapacityUSD)}</dl><p class="product-risk">Own drawdown · daily ${(Number(risk.dailyDrawdownFraction||0)*100).toFixed(1)}% / 5% · peak ${(Number(risk.peakDrawdownFraction||0)*100).toFixed(1)}% / 10%${risk.reason?' · '+escapeHTML(risk.reason.replaceAll('_',' ').toLowerCase()):''}</p>`:'<p class="product-risk">50% of capital after reserve · separate exposure limits and drawdown brake. Awaiting updated runtime.</p>';
+  const pnl=a?.realizedPnlUSD??a?.knownRealizedPnlUSD;
+  const partial=a&&(a.pendingMarkets>0||a.accountingStatus!=='READY');
+  const metrics=`<dl class="product-metrics">${stat(partial?'Confirmed P&L · partial':'Realized P&L',pnl)}${stat(a?.feeStatus==='KNOWN_ONLY'?'Known fees / rebates':'Fees / rebates',a?.feesUSD)}${stat('Open exposure',a?.openExposureUSD)}</dl>`;
+  const date=ns=>new Date(Number(ns)/1e6).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const windowText=isBTC&&recordFresh(btc.atNs,30)&&btc.endNs?`Entry ${date(btc.entryStartsNs)}–${date(btc.endNs)} · original target ${money(btc.priceToBeat)} · BRTI ${money(btc.probability?.latestPrice)}`:isBTC?'PMUS 15-minute contracts · entries in final 5 minutes':'Miami · Los Angeles · San Francisco · Chicago · New York';
+  const positions=(a?.positions||[]).map(p=>`<li><span title="${escapeHTML(p.marketSlug)}">${escapeHTML(p.marketSlug)}</span><strong>${escapeHTML(p.side)} · ${escapeHTML(p.quantity)} · ${money(p.costUSD)}</strong></li>`).join('');
+  const orders=(a?.orders||[]).slice(-10).reverse().map(o=>`<li><span title="${escapeHTML(o.marketSlug)}">${escapeHTML(o.marketSlug)}</span><strong>${escapeHTML(o.status||'Unknown')}</strong></li>`).join('');
+  return `<article class="product-card" data-product="${id}"><div class="product-card-head"><div><span class="product-symbol">${isBTC?'₿':'☀'}</span><h3>${title}</h3></div><span class="product-pill ${enabled&&applied&&live?'on':''}">${escapeHTML(state)}</span></div><p class="product-scope">${escapeHTML(windowText)}</p>${metrics}${riskText}<p class="product-reason">${escapeHTML(reason)}</p><button type="button" class="product-toggle ${enabled?'pause':'enable'}" data-product="${id}" ${!supported||productBusy?'disabled':''}>${enabled?'Pause '+title+' entries':'Enable '+title+' entries'}</button><details data-product="${id}" ${opened.has(id)?'open':''}><summary>${a?.orderCount??'—'} orders · ${a?.positions?.length??'—'} open positions${partial?' · '+a.pendingMarkets+' P&L pending':''}</summary><h4>Positions</h4><ul>${positions||'<li>No recorded open positions</li>'}</ul><h4>Recent orders</h4><ul>${orders||'<li>No recorded orders</li>'}</ul><p>${a?.accountingStatus==='INCOMPLETE_HISTORY'?'Some historical fills lack complete evidence. Only known amounts are shown.':'P&L uses owned fills, actual fees and matched settlement receipts.'}</p></details></article>`;
+ }).join('');
+ el.querySelectorAll('.product-toggle').forEach(button=>button.addEventListener('click',()=>setProduct(button.dataset.product)));
+ const message=document.getElementById('product-message');
+ if(!productBusy)message.textContent=!supported?'Install the available update to control both traders. BTC starts paused.':'Enabling permits real trades after account, source and risk checks. Pausing stops new submissions; resting quotes can fill until expiry. Positions continue to reconcile.';
+ const service=document.getElementById('trader-service');
+ if(traderServiceState){service.disabled=productBusy;service.textContent=traderServiceState.running?'Stop service':'Start service';}
+}
+async function refreshProductControls(){
+ if(window.WeatherDeskRemote?.requiresLogin)return;
+ try{
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
+  try{const responses=await Promise.all(['/api/products','/api/trader'].map(url=>fetch(url,{cache:'no-store',signal:controller.signal})));
+   if(responses.some(r=>!r.ok))throw Error('Control connection unavailable');
+   [productControlState,traderServiceState]=await Promise.all(responses.map(r=>r.json()));
+  }finally{clearTimeout(timer);}
+  if(productLatest)renderProductDesk(productLatest);
+ }catch{const message=document.getElementById('product-message');if(message&&!productBusy)message.textContent='Controls reconnecting to your Mac…';}
+}
+async function setProduct(product){
+ if(productBusy||!productControlState?.runtimeSupportsControls)return;
+ productBusy=true;if(productLatest)renderProductDesk(productLatest);
+ const message=document.getElementById('product-message');
+ try{
+  const r=await fetch('/api/products',{method:'POST',headers:{'Content-Type':'application/json','X-Weather-Trader-Control':productControlState.csrf},body:JSON.stringify({product,enabled:!productControlState.products[product],revision:productControlState.revision})});
+  if(!r.ok)throw Error('Setting changed or connection interrupted. Refresh and retry.');
+  message.textContent='Saved · waiting for trader acknowledgement';
+ }catch(e){message.textContent=e.message;}
+ finally{productBusy=false;await refreshProductControls();}
+}
+function initializeProductControls(){
+ document.getElementById('trader-service')?.addEventListener('click',async()=>{
+  if(productBusy||!traderServiceState)return;
+  const action=traderServiceState.running?'stop':'start';
+  if(!confirm(action==='start'?'Start the installed release? Enabled traders may place real-money orders.':'Stop the trading service? Open positions stay in your account.'))return;
+  productBusy=true;if(productLatest)renderProductDesk(productLatest);
+  try{
+   const r=await fetch('/api/trader',{method:'POST',headers:{'Content-Type':'application/json','X-Weather-Trader-Control':traderServiceState.csrf},body:JSON.stringify({action,manifestSha256:traderServiceState.manifestSha256})});
+   if(!r.ok)throw Error();document.getElementById('product-message').textContent='Service change requested';
+  }catch{document.getElementById('product-message').textContent='Service request failed. Refresh and retry.';}
+  finally{productBusy=false;await refreshProductControls();}
+ });
+ refreshProductControls();setInterval(refreshProductControls,5000);window.addEventListener('weather-auth-changed',refreshProductControls);
+}
+document.addEventListener('DOMContentLoaded',initializeProductControls);
