@@ -123,7 +123,7 @@ function renderSharedReserve(data){
 }
 let productControlState=null, traderServiceState=null, productBusy=false, productLatest=null;
 function bitcoinStatus(data,controls){
- const p=data.process||{},b=data.btc||{},risk=data.productRisk?.products?.btc,why=String(b.reason||'');
+ const p=data.process||{},b=data.btc||{},risk=data.productRisk?.products?.btc,why=String(b.reason||''),whyKey=why.toUpperCase();
  const state=(title,reason,next='',tone='waiting')=>({title,reason,next,tone});
  if(!connected)return state('Connection interrupted','Saved status is shown. Current BTC activity is unconfirmed.','Reconnecting automatically.');
  if(['HALTED','ERROR'].includes(p.status))return state('Trader needs attention','The service has stopped new BTC entries.','Account reconciliation must recover before trading.','alert');
@@ -131,15 +131,20 @@ function bitcoinStatus(data,controls){
  if(!recordFresh(p.heartbeatNs,90)||!recordFresh(b.atNs,30))return state('BTC update delayed','Waiting for a current strategy check.');
  if(!controls.runtimeSupportsControls)return state('BTC update required','The running release does not support BTC controls.');
  if(controls.appliedRevision!==controls.revision)return state('Applying entry setting','Waiting for the trader to acknowledge the saved switch.');
- const sourceHold=/BRTI|BINANCE|PMUS_BOOK|EXTERNAL|METADATA|SOURCE|TERMS|CONTRACT|ROSTER/.test(why);
+ const sourceHold=/BRTI|BINANCE|PMUS_BOOK|EXTERNAL|METADATA|SOURCE|TERMS|CONTRACT|ROSTER/.test(whyKey);
  const checked='Latest strategy check '+ageText(b.atNs)+'.';
- if(!controls.products?.btc||why==='USER_PAUSED_BTC')return state('BTC entries paused','New BTC orders are disabled; existing positions remain monitored.',sourceHold?'Latest input check: '+plainReason(why):checked);
- if(['USER_PAUSED_NEW_ENTRIES','VERIFIED_UPDATE_NEW_ENTRIES_PAUSED'].includes(why))return state('New entries paused',plainReason(why),checked);
+ if(!controls.products?.btc||whyKey==='USER_PAUSED_BTC')return state('BTC entries paused','New BTC orders are disabled; existing positions remain monitored.',sourceHold?'Latest input check: '+plainReason(why):checked);
+ if(['USER_PAUSED_NEW_ENTRIES','VERIFIED_UPDATE_NEW_ENTRIES_PAUSED'].includes(whyKey))return state('New entries paused',plainReason(why),checked);
  if(risk&&recordFresh(risk.atNs,90)&&risk.reason)return state('BTC risk hold',riskPauseReason(risk.reason),'BTC uses its own risk limits.','alert');
  if(sourceHold)return state('Waiting for BTC inputs',plainReason(why),'New entries wait for fresh BRTI, Binance and PMUS books.');
- if(why==='OUTSIDE_LAST_FIVE_MINUTES')return state('Waiting for entry window','BTC trades only in the final five minutes of each 15-minute contract.',checked);
- if(/MINIMUM|CAPACITY|KELLY|RISK|CASH|RESERVE|DRAWDOWN/.test(why))return state('Waiting for BTC capacity',plainReason(why),'New orders must fit BTC’s allocation, Kelly size and exposure limits.');
- if(why==='POST_ONLY_QUOTE_SUBMITTED')return state('Maker quote submitted','A post-only BTC quote was submitted; a fill is not yet implied.',checked,'good');
+ if(whyKey==='OUTSIDE_LAST_FIVE_MINUTES')return state('Waiting for entry window','BTC trades only in the final five minutes of each 15-minute contract.',checked);
+ if(whyKey==='OUTSIDE_TABLE_TIME_WINDOW'){
+  const endNs=Number(b.endNs),nowNs=Date.now()*1e6,remaining=(Number.isFinite(endNs)&&endNs>0)?(endNs-nowNs)/1e9:null;
+  const remainingText=Number.isFinite(remaining)?` About ${Math.max(0,Math.round(remaining))} seconds remain.`:'';
+  return state('Final five-minute window open','The outer BTC window is open, but this researched route quotes only with 61–180 seconds remaining.'+remainingText,checked);
+ }
+ if(/MINIMUM|CAPACITY|KELLY|RISK|CASH|RESERVE|DRAWDOWN/.test(whyKey))return state('Waiting for BTC capacity',plainReason(why),'New orders must fit BTC’s allocation, Kelly size and exposure limits.');
+ if(whyKey==='POST_ONLY_QUOTE_SUBMITTED')return state('Maker quote submitted','A post-only BTC quote was submitted; a fill is not yet implied.',checked,'good');
  if(b.status==='HOLD')return state('Watching · no new order',plainReason(why)||'No eligible entry on the latest check.',checked);
  if(b.status==='WATCHING')return state('Watching BTC markets','Checking price, order flow, available capital and execution conditions.',checked,'good');
  return state('Checking BTC trader',plainReason(why||b.status||'Waiting for status'),checked);

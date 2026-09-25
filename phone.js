@@ -9,12 +9,13 @@
    const product=state?.products?.[id],current=product||state;
    const installed=['CURRENT','INSTALLED'].includes(current?.state),version=String(current?.releaseId||'').match(/-r(\d+)(?:-|$)/)?.[1];
    const available=!!current?.canUpdate&&!error;
-   const applying=busy||state?.requestRunning||state?.state==='APPLYING';
-   button.disabled=!available||applying||reviewing;
-   button.textContent=applying?'Updating…':available?'Update '+names[id]+(version?' · r'+version:''):installed?names[id]+' up to date':state?'Update unavailable':'Checking update…';
+   const requestRunning=busy||state?.requestRunning;
+   const pending=!requestRunning&&current?.state==='APPLYING';
+   button.disabled=!available||requestRunning||pending||reviewing;
+   button.textContent=requestRunning?'Updating…':pending?'Update pending':available?'Update '+names[id]+(version?' · r'+version:''):installed?names[id]+' up to date':state?'Update unavailable':'Checking update…';
    button.title=current?.summary||'';
    box.dataset.state=available?'available':installed?'current':'waiting';
-   note.textContent=error|| (available&&current?.activationScope==='SHARED_RELEASE'?'This package updates both traders and their shared runtime.':applying?'Waiting for the selected release to be adopted.':current?.state==='INSTALLED'?'Installed. See trader status above.':'');
+   note.textContent=error|| (available&&current?.activationScope==='SHARED_RELEASE'?'This package updates both traders and their shared runtime.':requestRunning?'Waiting for the selected release to be adopted.':pending?'The release is published and waiting for the trader to adopt it.':current?.state==='INSTALLED'?'Installed. See trader status above.':'');
   });
  }
  async function refresh(){
