@@ -38,7 +38,7 @@
  window.fetch=async(input,options={})=>{
   if(typeof input!=='string'||!input.startsWith('/api/'))return originalFetch(input,options);
   if(!token)throw Error('Sign in to connect');
-  if(!['/api/status','/api/btc-chart','/api/phone-update','/api/protected-balance','/api/products','/api/allocation','/api/trader'].includes(input))throw Error('Control unavailable remotely');
+  if(!['/api/status','/api/btc-status','/api/btc-chart','/api/phone-update','/api/protected-balance','/api/products','/api/allocation','/api/trader'].includes(input))throw Error('Control unavailable remotely');
   return call(input,options);
  };
  document.addEventListener('DOMContentLoaded',()=>{

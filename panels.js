@@ -136,6 +136,12 @@ function tickBtcCountdown(){
  if(!el)return;
  el.textContent=btcCountdownText(el.dataset.entryStartsNs,el.dataset.endNs);
 }
+function btcProbabilityBlock(btc){
+ const p=btc?.probability||{},value=Number(p.upProbability),fresh=recordFresh(btc?.atNs,5);
+ const probability=Number.isFinite(value)&&value>=0&&value<=1?`${(value*100).toFixed(2)}% up`:'Unavailable';
+ const model=p.model||'Model unavailable';
+ return `<div class="btc-live-model" aria-label="Live BTC model probability"><div><span>Live model</span><strong>${escapeHTML(probability)}</strong></div><div><span>${escapeHTML(model)}</span><small>${fresh?'Updated '+ageText(btc.atNs):'Stale / waiting for update'}</small></div></div>`;
+}
 function bitcoinStatus(data,controls){
  const p=data.process||{},b=data.btc||{},risk=data.productRisk?.products?.btc,why=String(b.reason||''),whyKey=why.toUpperCase();
  const state=(title,reason,next='',tone='waiting')=>({title,reason,next,tone});
@@ -195,7 +201,7 @@ function renderProductDesk(data){
   const orders=(a?.orders||[]).slice(-10).reverse().map(o=>`<li><span title="${escapeHTML(o.marketSlug)}">${escapeHTML(o.marketSlug)}</span><strong>${escapeHTML(o.status||'Unknown')}</strong></li>`).join('');
   const w=isBTC?bitcoinStatus(data,controls):(data.weatherStatus||{});
   const countdown=isBTC?`<p class="btc-status-countdown" data-btc-countdown data-entry-starts-ns="${escapeHTML(btc.entryStartsNs||'')}" data-end-ns="${escapeHTML(btc.endNs||'')}">${escapeHTML(btcCountdownText(btc.entryStartsNs,btc.endNs))}</p>`:'';
-  const statusBlock=`<section class="product-trader-status" data-tone="${escapeHTML(w.tone||'waiting')}" aria-label="${title} status"><span class="status-kicker"><span class="status-dot"></span>${title} status</span><h4>${escapeHTML(w.title||'Checking trader…')}</h4>${countdown}<p>${escapeHTML(w.reason||reason)}</p>${w.next?`<p class="trader-status-next">${escapeHTML(w.next)}</p>`:''}</section>`;
+  const statusBlock=`<section class="product-trader-status" data-tone="${escapeHTML(w.tone||'waiting')}" aria-label="${title} status"><span class="status-kicker"><span class="status-dot"></span>${title} status</span><h4>${escapeHTML(w.title||'Checking trader…')}</h4>${countdown}${isBTC?btcProbabilityBlock(btc):''}<p>${escapeHTML(w.reason||reason)}</p>${w.next?`<p class="trader-status-next">${escapeHTML(w.next)}</p>`:''}</section>`;
   return `<article class="product-card" data-product="${id}"><div class="product-card-head"><div><span class="product-symbol">${isBTC?'₿':'☀'}</span><h3>${title}</h3></div><span class="product-pill ${enabled&&applied&&live?'on':''}">${escapeHTML(state)}</span></div><p class="product-scope">${escapeHTML(windowText)}</p>${metrics}<p class="product-pnl-note">${escapeHTML(pnlNote)}</p>${riskText}${statusBlock}<button type="button" class="product-toggle ${enabled?'pause':'enable'}" data-product="${id}" ${!supported||productBusy?'disabled':''}>${enabled?'Pause '+title+' entries':'Enable '+title+' entries'}</button><div class="product-update" data-update-product="${id}" role="region" aria-label="${title} software update"><button type="button" data-product-update="${id}" disabled>Checking update…</button><p data-update-note></p></div><details data-product="${id}" ${opened.has(id)?'open':''}><summary>${a?.orderCount??'—'} orders · ${a?.positions?.length??'—'} open positions${partial?' · '+a.pendingMarkets+' P&L pending':''}</summary><h4>Positions</h4><ul>${positions||'<li>No recorded open positions</li>'}</ul><h4>Recent orders</h4><ul>${orders||'<li>No recorded orders</li>'}</ul><p>${a?.accountingStatus==='INCOMPLETE_HISTORY'?'Some historical fills lack complete evidence. Only known amounts are shown.':'P&L uses owned fills, actual fees and matched settlement receipts.'}</p></details></article>`;
  }).join('');
  tickBtcCountdown();
@@ -214,6 +220,20 @@ function renderProductDesk(data){
  }
 }
 let productPollInFlight=false;
+let btcStatusPollInFlight=false;
+async function refreshBtcStatus(){
+ if(btcStatusPollInFlight||document.hidden||window.WeatherDeskRemote?.requiresLogin)return;
+ btcStatusPollInFlight=true;
+ try{
+  const response=await fetch('/api/btc-status',{cache:'no-store',signal:AbortSignal.timeout(1500)});
+  if(!response.ok)throw Error('BTC status unavailable');
+  const btc=await response.json();
+  if(!productLatest)return;
+  productLatest={...productLatest,btc};
+  renderProductDesk(productLatest);
+ }catch{}
+ finally{btcStatusPollInFlight=false;}
+}
 async function refreshProductControls(){
  if(productPollInFlight||window.WeatherDeskRemote?.requiresLogin)return;
  productPollInFlight=true;
@@ -251,7 +271,7 @@ function initializeProductControls(){
   }catch{document.getElementById('product-message').textContent='Service request failed. Refresh and retry.';}
   finally{productBusy=false;await refreshProductControls();}
  });
- refreshProductControls();setInterval(refreshProductControls,5000);window.addEventListener('weather-auth-changed',refreshProductControls);
+ refreshProductControls();setInterval(refreshProductControls,2000);refreshBtcStatus();setInterval(refreshBtcStatus,500);window.addEventListener('weather-auth-changed',()=>{refreshProductControls();refreshBtcStatus();});
 }
 document.addEventListener('DOMContentLoaded',initializeProductControls);
 
