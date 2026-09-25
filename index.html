@@ -4,11 +4,11 @@
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex,nofollow">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.trycloudflare.com; object-src 'none'; base-uri 'none'; form-action 'none'">
-<script src="./remote.js?v=e310386e66dd5d98"></script>
+<script src="./remote.js?v=95fb4b83d56c2053"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>Trading Desk</title>
+  <title>Polymarket Trader</title>
   <style>
     :root{--bg:#f5f7fb;--ink:#16233b;--muted:#718098;--line:#e5eaf2;--blue:#4263eb;--nav:#142138;--green:#167553;--amber:#a96312;--red:#bc3e4b}
     *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,a{-webkit-tap-highlight-color:transparent}button{font:inherit}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible{outline:3px solid #91a9ff;outline-offset:4px}svg{display:block;flex:none}.shell{display:flex;min-height:100vh}
@@ -56,7 +56,7 @@ body{font-size:14px;color:#20324a}main{margin:0;width:100%;padding:26px 22px}.ma
 </head>
 <body>
 <main id="overview"><div class="main-inner">
-  <header class="topbar"><div class="wordmark"><span class="app-symbol" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></span><div><h1>Trading Desk</h1><p class="subtitle">Weather + Bitcoin. Separate books.</p></div></div><div class="top-right"><span id="connection" class="connection" role="status"><span class="dot"></span><span id="connection-text">Connecting</span></span><button id="refresh" class="refresh" type="button" aria-label="Refresh dashboard" title="Refresh dashboard"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 6a8 8 0 0 1 13 2l1 4M4 12l1 4a8 8 0 0 0 13 2"/></svg></button></div></header>
+  <header class="topbar"><div class="wordmark"><span class="app-symbol" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></span><div><h1>Polymarket Trader</h1><p class="subtitle">Weather + Bitcoin. Separate books.</p></div></div><div class="top-right"><span id="connection" class="connection" role="status"><span class="dot"></span><span id="connection-text">Connecting</span></span><button id="refresh" class="refresh" type="button" aria-label="Refresh dashboard" title="Refresh dashboard"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 6a8 8 0 0 1 13 2l1 4M4 12l1 4a8 8 0 0 0 13 2"/></svg></button></div></header>
   <section id="product-desk" class="product-desk" aria-label="Weather and Bitcoin traders"><div class="product-heading"><div><h2>Your traders</h2><p>Separate accounting and risk · 50/50 after reserve</p></div><button id="trader-service" type="button" disabled>Checking service…</button></div><div id="product-cards" class="product-cards"></div><p id="product-message" class="product-message" role="status">Reading trader controls…</p></section>
   <div id="banner" class="banner" role="status"></div>
   <div class="overview-grid"><section class="decision-card" id="trader-status" data-tone="waiting" aria-labelledby="decision-title"><div class="status-kicker"><span class="status-dot"></span>Trader status</div><h2 id="decision-title">Checking trader…</h2><p id="decision-explanation">Reading the latest records.</p><p class="decision-next" id="decision-next"></p></section>
