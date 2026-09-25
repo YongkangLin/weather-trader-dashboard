@@ -118,8 +118,8 @@ function renderSharedReserve(data){
  if(!r||!c?.available){el.textContent='Waiting for the account capital breakdown.';return;}
  const reserve=Number(r.protectedReserveUSD),remaining=Number(r.remainingCapitalUSD);
  if(!Number.isFinite(reserve)||!Number.isFinite(remaining)){el.textContent='Capital breakdown unavailable.';return;}
- const values=[['Capital before reserve',reserve+remaining],['Total reserve · applied once',reserve],['Remaining for both traders',remaining],['Allocation per trader',r.products?.btc?.allocationUSD]];
- el.innerHTML=`<dl>${values.map(([label,value])=>`<div><dt>${escapeHTML(label)}</dt><dd>${escapeHTML(money(value))}</dd></div>`).join('')}</dl><p>One total reserve, then an equal split. Existing exposure and each trader’s own risk checks limit new orders.${r.capitalBalanceBasis!=='TOTAL_TRADABLE_BALANCE_V1'&&String(data.releaseUpdate?.releaseId||'').includes('total-tradable')?' The prepared Update switches both traders to your total tradable balance.':''}${c.reserveDiffersFromAccount?' Saved reserve change is awaiting trader recalculation.':''}${!c.fresh?' Last reconciled account values; awaiting a fresh check.':''}</p>`;
+ const values=[['Capital before reserve',reserve+remaining],['Total reserve · applied once',reserve],['Remaining for both traders',remaining],['Weather allocation',r.products?.weather?.allocationUSD],['Bitcoin allocation',r.products?.btc?.allocationUSD]];
+ el.innerHTML=`<dl>${values.map(([label,value])=>`<div><dt>${escapeHTML(label)}</dt><dd>${escapeHTML(money(value))}</dd></div>`).join('')}</dl><p>One total reserve, then your saved split. Existing exposure and each trader’s own risk checks limit new orders.${r.capitalBalanceBasis!=='TOTAL_TRADABLE_BALANCE_V1'&&String(data.releaseUpdate?.releaseId||'').includes('total-tradable')?' The prepared Update switches both traders to your total tradable balance.':''}${c.reserveDiffersFromAccount?' Saved reserve change is awaiting trader recalculation.':''}${!c.fresh?' Last reconciled account values; awaiting a fresh check.':''}</p>`;
 }
 let productControlState=null, traderServiceState=null, productBusy=false, productLatest=null;
 function bitcoinStatus(data,controls){
@@ -160,7 +160,7 @@ function renderProductDesk(data){
     enabled?'Five city forecasts · current weather strategy':'New entries paused; existing positions stay monitored';
   const stat=(label,value)=>`<div><dt>${escapeHTML(label)}</dt><dd>${value==null?'—':escapeHTML(money(value))}</dd></div>`;
   const risk=data.productRisk?.products?.[id];
-  const riskText=risk?`<dl class="product-metrics">${stat('Capital · 50% after reserve',risk.allocationUSD)}${stat('Own total exposure cap',risk.limits?.totalUSD)}${stat('Available cash capacity',risk.cashCapacityUSD)}</dl><p class="product-risk">Own drawdown · daily ${(Number(risk.dailyDrawdownFraction||0)*100).toFixed(1)}% / 5% · peak ${(Number(risk.peakDrawdownFraction||0)*100).toFixed(1)}% / 10%${risk.reason?' · '+escapeHTML(risk.reason.replaceAll('_',' ').toLowerCase()):''}</p>`:'<p class="product-risk">50% of capital after reserve · separate exposure limits and drawdown brake. Awaiting updated runtime.</p>';
+  const riskText=risk?`<dl class="product-metrics">${stat('Capital · '+(Number(risk.allocationFraction)*100).toFixed(0)+'% after reserve',risk.allocationUSD)}${stat('Own total exposure cap',risk.limits?.totalUSD)}${stat('Available cash capacity',risk.cashCapacityUSD)}</dl><p class="product-risk">Own drawdown · daily ${(Number(risk.dailyDrawdownFraction||0)*100).toFixed(1)}% / 5% · peak ${(Number(risk.peakDrawdownFraction||0)*100).toFixed(1)}% / 10%${risk.reason?' · '+escapeHTML(risk.reason.replaceAll('_',' ').toLowerCase()):''}</p>`:'<p class="product-risk">Your saved share after reserve · separate exposure limits and drawdown brake. Awaiting updated runtime.</p>';
   const confirmed=Number(a?.confirmedMarkets||0),partial=a&&(a.pendingMarkets>0||a.accountingStatus!=='READY');
   const pnl=confirmed>0?(a?.realizedPnlUSD??a?.knownRealizedPnlUSD):null;
   const pnlLabel=confirmed>0?(partial?'Realized P&L · partial':'Realized P&L'):a?.pnlStatus==='NO_FILLS'?'Realized P&L · no fills':'P&L · pending reconciliation';
@@ -181,16 +181,20 @@ function renderProductDesk(data){
  const service=document.getElementById('trader-service');
  if(traderServiceState){service.disabled=productBusy;service.textContent=traderServiceState.running?'Stop service':'Start service';}
 }
+let productPollInFlight=false;
 async function refreshProductControls(){
- if(window.WeatherDeskRemote?.requiresLogin)return;
+ if(productPollInFlight||window.WeatherDeskRemote?.requiresLogin)return;
+ productPollInFlight=true;
  try{
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
   try{const responses=await Promise.all(['/api/products','/api/trader'].map(url=>fetch(url,{cache:'no-store',signal:controller.signal})));
    if(responses.some(r=>!r.ok))throw Error('Control connection unavailable');
    [productControlState,traderServiceState]=await Promise.all(responses.map(r=>r.json()));
+   window.dispatchEvent(new CustomEvent('allocation-control-updated',{detail:productControlState}));
   }finally{clearTimeout(timer);}
   if(productLatest)renderProductDesk(productLatest);
  }catch{const message=document.getElementById('product-message');if(message&&!productBusy)message.textContent='Controls reconnecting to your Mac…';}
+ finally{productPollInFlight=false;}
 }
 async function setProduct(product){
  if(productBusy||!productControlState?.runtimeSupportsControls)return;
@@ -234,3 +238,31 @@ function btcPriceChart(chart){
  const entry=Number(chart.entryStartsNs)/1e9,fresh=chart.fresh&&recordFresh(chart.latestPriceNs,5),latest=Number(pts[pts.length-1][1]),delta=latest-target;
  return `<section class="btc-chart" aria-label="Bitcoin price movement"><div class="btc-chart-heading"><h2>Bitcoin · 15-minute price movement</h2><span class="${fresh?'':'btc-stale'}">${fresh?'Live · refreshes every second':'Delayed / reconnecting'}</span></div><div class="btc-chart-price">${escapeHTML(price(latest))}<small>${delta>=0?'+':''}${escapeHTML(price(delta))} vs target</small></div><svg viewBox="0 0 640 218" role="img" aria-label="BTC BRTI price over the current fifteen-minute contract, original target dashed, final five minutes shaded"><rect x="${x(entry)}" y="16" width="${x(end)-x(entry)}" height="163" fill="#e3ac5010"/><text x="${x(entry)+7}" y="12" class="btc-window-label">Final 5 min</text>${[ymin,(ymin+ymax)/2,ymax].map(v=>`<line x1="12" x2="532" y1="${y(v)}" y2="${y(v)}" class="btc-grid"/><text x="542" y="${y(v)+4}">${escapeHTML(price(v))}</text>`).join('')}<line x1="12" x2="532" y1="${y(target)}" y2="${y(target)}" class="btc-target"/><path d="${path}" class="btc-series"/><circle cx="${x(pts[pts.length-1][0])}" cy="${y(latest)}" r="3" fill="#e4b76c"/>${[start,start+450,end].map((t,i)=>`<text x="${x(t)}" y="205" text-anchor="${i===0?'start':i===2?'end':'middle'}">${escapeHTML(clock(t))}</text>`).join('')}</svg><div class="btc-chart-legend"><span>— BRTI / USD</span><span>╌ Original target ${escapeHTML(price(target))}</span></div><p>Last tick ${escapeHTML(ageText(chart.latestPriceNs))} · rolling 60-second average ${chart.rollingAverageUSD==null?'unavailable':escapeHTML(money(chart.rollingAverageUSD))}. Settlement uses the closing 60-second average; the line shows individual index prices.</p>${chart.missingSeconds?`<p>${chart.missingSeconds} seconds without a qualified observation; gaps remain visible.</p>`:''}</section>`;
 }
+
+// Persist only an explicit Save. Polling never overwrites an unsaved slider edit.
+document.addEventListener('DOMContentLoaded',()=>{
+ const form=document.getElementById('allocation-form'),slider=document.getElementById('weather-allocation'),label=document.getElementById('allocation-label'),button=document.getElementById('allocation-save'),note=document.getElementById('allocation-status');
+ if(!form)return;
+ let state=null,csrf=null,dirty=false,editingRevision=null,busy=false;
+ const show=()=>{label.textContent='Weather '+slider.value+'% · Bitcoin '+(100-Number(slider.value))+'%';slider.setAttribute('aria-valuetext',label.textContent);};
+ slider.addEventListener('input',()=>{if(!dirty)editingRevision=state?.revision;dirty=true;show();note.textContent='Unsaved split. Existing positions stay in their own books.';});
+ window.addEventListener('allocation-control-updated',event=>{
+  const data=event.detail;if(!data?.allocation)return;state=data.allocation;csrf=data.csrf;
+  slider.disabled=!state.supported||busy;button.disabled=!state.supported||busy;
+  if(!dirty){slider.value=state.weatherPercent;show();}
+  if(dirty){if(editingRevision!==state.revision)note.textContent='Split changed elsewhere. Reload before saving.';return;}
+  note.textContent=!state.supported?'Install the available trader update to enable adjustable budgets.':state.applied?'Applied · each trader uses its saved budget.':state.running?'Saved · awaiting the next account check.':'Saved · applies when the trader starts.';
+ });
+ form.addEventListener('submit',async event=>{
+  event.preventDefault();if(busy||!state?.supported||!csrf)return;
+  if(dirty&&editingRevision!==state.revision){note.textContent='Split changed elsewhere. Reload before saving.';return;}
+  busy=true;button.disabled=true;slider.disabled=true;note.textContent='Saving split…';
+  try{
+   const response=await fetch('/api/allocation',{method:'POST',headers:{'Content-Type':'application/json','X-Weather-Trader-Control':csrf},body:JSON.stringify({revision:dirty?editingRevision:state.revision,weatherPercent:Number(slider.value)}),signal:AbortSignal.timeout(10000)});
+   const result=await response.json();if(!response.ok)throw Error(result.error||'Split save was not confirmed');
+   dirty=false;editingRevision=null;note.textContent='Saved · awaiting trader acknowledgement.';window.dispatchEvent(new Event('capital-setting-saved'));
+  }catch(error){note.textContent=error.message||'Save was not confirmed. Refresh before retrying.';}
+  finally{busy=false;button.disabled=!state?.supported;slider.disabled=!state?.supported;}
+ });
+ show();
+});

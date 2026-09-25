@@ -2,14 +2,15 @@
 (()=>{
  'use strict';
  const originalFetch=window.fetch.bind(window), storageKey='weather-desk-session:'+location.pathname;
- let token=null, endpoint=null, endpointAt=0, endpointPromise=null, loginBox=null;
+ let token=null, endpoint=null, endpointAt=0, endpointPromise=null, endpointAttemptAt=0, loginBox=null;
  try{localStorage.removeItem('weather-desk-access:'+location.pathname);token=localStorage.getItem(storageKey);}catch{}
  if(new URLSearchParams(location.hash.slice(1)).has('access'))history.replaceState(null,'',location.pathname);
  window.EventSource=undefined;
  window.WeatherDeskRemote={requiresLogin:!token};
  async function discover(){
-  if(endpoint&&Date.now()-endpointAt<30000)return endpoint;
+  if(endpoint&&(Date.now()-endpointAt<30000||Date.now()-endpointAttemptAt<10000))return endpoint;
   if(endpointPromise)return endpointPromise;
+  endpointAttemptAt=Date.now();
   endpointPromise=(async()=>{
    const r=await originalFetch('./endpoint.json?t='+Math.floor(Date.now()/30000),{cache:'no-store',signal:AbortSignal.timeout(8000)});
    if(!r.ok)throw Error('Mac connection unavailable');
@@ -17,7 +18,7 @@
    if(!/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(value.endpoint))throw Error('Mac connection unavailable');
    endpoint=value.endpoint;endpointAt=Date.now();return endpoint;
   })();
-  try{return await endpointPromise;}finally{endpointPromise=null;}
+  try{return await endpointPromise;}catch(error){if(endpoint)return endpoint;throw error;}finally{endpointPromise=null;}
  }
  function lock(){
   token=null;try{localStorage.removeItem(storageKey);}catch{}
@@ -30,14 +31,14 @@
   try{
    const response=await originalFetch(base+path,{...options,headers,mode:'cors',credentials:'omit',redirect:'error',referrerPolicy:'no-referrer',signal:options.signal||AbortSignal.timeout(12000)});
    if(response.status===401&&path!=='/api/login')lock();
-   if(response.status>=500)endpointAt=0;
+   if([502,503,504,530].includes(response.status))endpointAt=0;
    return response;
-  }catch(error){endpointAt=0;throw error;}
+  }catch(error){if(error.name!=='AbortError'&&error.name!=='TimeoutError')endpointAt=0;throw error;}
  }
  window.fetch=async(input,options={})=>{
   if(typeof input!=='string'||!input.startsWith('/api/'))return originalFetch(input,options);
   if(!token)throw Error('Sign in to connect');
-  if(!['/api/status','/api/btc-chart','/api/phone-update','/api/protected-balance','/api/products','/api/trader'].includes(input))throw Error('Control unavailable remotely');
+  if(!['/api/status','/api/btc-chart','/api/phone-update','/api/protected-balance','/api/products','/api/allocation','/api/trader'].includes(input))throw Error('Control unavailable remotely');
   return call(input,options);
  };
  document.addEventListener('DOMContentLoaded',()=>{
