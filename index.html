@@ -4,7 +4,7 @@
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex,nofollow">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.trycloudflare.com; object-src 'none'; base-uri 'none'; form-action 'none'">
-<script src="./remote.js?v=95fb4b83d56c2053"></script>
+<script src="./remote.js?v=65bd0298618251b3"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
@@ -51,8 +51,8 @@ body{font-size:14px;color:#20324a}main{margin:0;width:100%;padding:26px 22px}.ma
 
 .input-panel{margin:16px 0 20px}.input-panel .panel-head{align-items:flex-start}.input-overview{padding:0 20px 12px;font-size:12px;color:#65778f}.input-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;padding:0 20px 18px}.input-item{padding:12px;border:1px solid var(--line);border-radius:9px;min-width:0}.input-item summary{cursor:pointer;list-style:none}.input-item summary strong{font-size:12px;display:block}.input-item summary small{display:block;color:var(--muted);margin-top:5px;font-size:10px}.input-item p{font-size:11px;color:#65778f}.input-item .input-badge{float:right;margin:0 0 5px 5px}.input-badge{display:inline-block;background:#edf1f6;border-radius:5px;padding:3px 6px;font-size:10px;color:#5f718b;white-space:nowrap}.input-badge.good{background:#e6f4ed;color:#167553}.input-badge.warn{background:#fff0db;color:#975e12}.input-badge.bad{background:#fce9eb;color:#ae3644}.input-detail-line{font-size:10px;margin:7px 0;padding-top:6px;border-top:1px solid var(--line);color:#60748f;overflow-wrap:anywhere}.input-cities{padding:0 20px 18px}.input-cities>summary{cursor:pointer;font-size:12px;color:#3a5577}.input-matrix{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin-top:12px}.input-cell{border:1px solid var(--line);border-radius:9px;padding:12px;font-size:11px}.input-cell h3{font-size:12px;margin:0 0 8px}.input-cell p{margin:8px 0;color:#63758e}.input-cell .input-badge{margin-top:5px}.input-cell small{display:block;color:#8190a4;margin-top:6px}.input-release{overflow-wrap:anywhere;font-size:11px;color:#7b899c;margin-top:6px}@media(max-width:1100px){.input-list{grid-template-columns:repeat(2,minmax(0,1fr))}.input-matrix{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:620px){.input-list,.input-matrix{grid-template-columns:1fr}.input-list,.input-cities{padding-left:12px;padding-right:12px}.input-item summary strong{font-size:13px}}
 </style>
-<link rel="stylesheet" href="./panels.css?v=5bad97db4b8d19d3">
-<script src="./panels.js?v=c73fd5742d44b656"></script>
+<link rel="stylesheet" href="./panels.css?v=2271919ca5d40edb">
+<script src="./panels.js?v=1bc95d765f529004"></script>
 </head>
 <body>
 <main id="overview"><div class="main-inner">
@@ -551,11 +551,28 @@ function render(data){
  const version=String(p.release||'').match(/-r(\d+)(?:-|$)/)?.[1];
  $('desk-strip').textContent=(p.running?(p.release===p.availableRelease?'Published release running':'Release update pending'):'Trader stopped · selected '+(p.availableRelease||'unknown'))+(p.running&&version?' · r'+version:'');
  renderProductDesk(data);
- $('btc-market-chart').innerHTML=btcPriceChart(data.btcChart);
+ renderBitcoinChart(data.btcChart);
  renderDailyHighs(data.observedHighs,data.generatedAtNs,data.settlementHighs,data.nwsHourlyHighs);
  $('last-update').textContent='Account '+ageText(a.observedNs)+' · stream packet '+ageText(data.generatedAtNs)+' · '+(connected?'connected':'reconnecting');
 }
 function setConnection(value){connected=value;$('connection').className='connection '+(value?'connected':'disconnected');$('connection-text').textContent=value?'Live · 5s refresh':'Reconnecting'}
+let bitcoinChart=null,bitcoinChartInFlight=false;
+function renderBitcoinChart(value){
+ // A slower account packet must not roll the one-second chart backwards.
+ if(value&&(!bitcoinChart||Number(value.receivedNs||0)>=Number(bitcoinChart.receivedNs||0)))bitcoinChart=value;
+ $('btc-market-chart').innerHTML=btcPriceChart(bitcoinChart);
+}
+async function refreshBitcoinChart(){
+ if(bitcoinChartInFlight||document.hidden||window.WeatherDeskRemote?.requiresLogin)return;
+ bitcoinChartInFlight=true;
+ try{
+  const response=await fetch('/api/btc-chart',{cache:'no-store',signal:AbortSignal.timeout(4000)});
+  if(!response.ok)throw Error('Chart unavailable');
+  const chart=await response.json();if(!chart||!Array.isArray(chart.points))throw Error('Invalid chart');
+  renderBitcoinChart(chart);
+ }catch{if(bitcoinChart)renderBitcoinChart({...bitcoinChart,fresh:false,status:'UNAVAILABLE'});}
+ finally{bitcoinChartInFlight=false;}
+}
 window.addEventListener('capital-setting-saved',()=>refresh());
 async function refresh(){if(inFlight)return;inFlight=true;$('refresh').disabled=true;const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),5000);try{const response=await fetch('/api/status',{cache:'no-store',signal:controller.signal,headers:{Accept:'application/json'}});if(!response.ok)throw Error('Status unavailable');const data=await response.json();if(!data||typeof data!=='object'||!Array.isArray(data.cities))throw Error('Invalid status');latest=data;lastSuccess=Date.now();setConnection(true);render(data)}catch{setConnection(false);if(latest)render(latest);else{$('banner').textContent='Waiting for your Mac. Reconnecting automatically.';$('banner').classList.add('show')}}finally{clearTimeout(timer);inFlight=false;$('refresh').disabled=false}}
 for(const [id,offset] of [['highs-current',0],['highs-previous',-1]])$(id).addEventListener('click',()=>{dailyHighOffset=offset;if(latest)renderDailyHighs(latest.observedHighs,latest.generatedAtNs,latest.settlementHighs,latest.nwsHourlyHighs)});
@@ -570,6 +587,9 @@ function streamStatus(){
  statusStream.onerror=()=>{setConnection(false);if(latest)render(latest)};
 }
 refresh();streamStatus();
+refreshBitcoinChart();setInterval(refreshBitcoinChart,1000);
+window.addEventListener('weather-auth-changed',refreshBitcoinChart);
+document.addEventListener('visibilitychange',refreshBitcoinChart);
 setInterval(()=>{if(!statusStream||statusStream.readyState!==EventSource.OPEN)refresh();},5000);
 setInterval(tickLiveClock,1000);
 window.addEventListener('pagehide',()=>statusStream?.close());
