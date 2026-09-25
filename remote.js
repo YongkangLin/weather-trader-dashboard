@@ -43,7 +43,7 @@
  document.addEventListener('DOMContentLoaded',()=>{
   const style=document.createElement('style');style.textContent='.remote-locked main{display:none}#remote-login{max-width:390px;margin:12vh auto;padding:28px;background:#fff;border:1px solid #dfe6ee;border-radius:16px;box-shadow:0 10px 35px #1421380b}#remote-login h1{margin:0 0 8px}#remote-login p{color:#65778f}#remote-login label{display:block;margin:18px 0 6px;font-weight:600}#remote-login input{width:100%;padding:11px;border:1px solid #ccd6e5;border-radius:8px;font:inherit}#remote-login button{width:100%;margin-top:20px;padding:12px;border:0;border-radius:8px;color:white;background:#4263eb;font:inherit;cursor:pointer}#remote-login button:disabled{opacity:.55;cursor:wait}#login-message{min-height:22px;font-size:13px}';document.head.append(style);
   loginBox=document.createElement('section');loginBox.id='remote-login';
-  loginBox.innerHTML='<h1>Weather Desk</h1><p>Sign in to view your trader and apply updates.</p><form><label for="remote-user">Username</label><input id="remote-user" name="username" autocomplete="username" required><label for="remote-password">Password</label><input id="remote-password" name="password" type="password" autocomplete="current-password" required><button type="submit">Sign in</button><p id="login-message" role="status"></p></form>';
+  loginBox.innerHTML='<h1>Weather Trader</h1><p>Sign in to view your trader and apply updates.</p><form><label for="remote-user">Username</label><input id="remote-user" name="username" autocomplete="username" required><label for="remote-password">Password</label><input id="remote-password" name="password" type="password" autocomplete="current-password" required><button type="submit">Sign in</button><p id="login-message" role="status"></p></form>';
   document.body.prepend(loginBox);loginBox.hidden=!!token;
   if(!token)document.body.classList.add('remote-locked');
   const form=loginBox.querySelector('form'),message=loginBox.querySelector('#login-message'),button=form.querySelector('button');
@@ -60,10 +60,10 @@
    }catch(error){message.textContent=error.message==='Failed to fetch'?'Mac connection interrupted. Please retry shortly.':error.message;}
    finally{button.disabled=false;}
   });
-  const bar=document.createElement('p');bar.style='font-size:12px;color:#65778f;margin:8px 0 16px';
-  bar.append('Remote connection · Your Mac must be awake and online. ');
+  const bar=document.createElement('p');bar.className='remote-session';
+  bar.append('Your Mac must stay awake and online. ');
   const logout=document.createElement('button');logout.textContent='Sign out';logout.style='border:0;background:none;color:#4263eb;cursor:pointer';
   logout.onclick=async()=>{try{await call('/api/logout',{method:'POST'});}finally{lock();window.dispatchEvent(new Event('weather-auth-changed'));}};
-  bar.append(logout);document.querySelector('.main-inner').prepend(bar);
+  bar.append(logout);document.querySelector('.main-inner').append(bar);
  });
 })();

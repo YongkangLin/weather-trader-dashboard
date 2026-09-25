@@ -8,7 +8,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>Weather Desk · Trading overview</title>
+  <title>Weather Trader</title>
   <style>
     :root{--bg:#f5f7fb;--ink:#16233b;--muted:#718098;--line:#e5eaf2;--blue:#4263eb;--nav:#142138;--green:#167553;--amber:#a96312;--red:#bc3e4b}
     *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,a{-webkit-tap-highlight-color:transparent}button{font:inherit}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible{outline:3px solid #91a9ff;outline-offset:4px}svg{display:block;flex:none}.shell{display:flex;min-height:100vh}
@@ -56,20 +56,21 @@ body{font-size:14px;color:#20324a}main{margin:0;width:100%;padding:26px 22px}.ma
 <style>.daily-high-pair{display:grid;grid-template-columns:1fr 1fr;gap:18px}.daily-high-label{font-size:12px;color:var(--muted,#a3adb8);margin:8px 0}.daily-high-pair .daily-high-value{font-size:27px}.daily-high-details{margin-top:16px;font-size:11px;color:var(--muted,#a3adb8)}.daily-high-details summary{cursor:pointer}.daily-highs-grid{grid-template-columns:repeat(auto-fit,minmax(285px,1fr))}</style></head>
 <body>
 <main id="overview"><div class="main-inner">
-  <header class="topbar"><div><h1>Weather Desk</h1><p class="subtitle">Five cities · one account</p></div><div class="top-right"><span id="connection" class="connection" role="status"><span class="dot"></span><span id="connection-text">Connecting</span></span><button id="refresh" class="refresh" type="button" aria-label="Refresh dashboard">Refresh</button></div></header>
-  <nav class="desk-nav" aria-label="Dashboard sections"><a href="#daily-highs">Daily highs</a><a href="#strategies">Strategies</a><a href="#data-inputs">Data inputs</a><a href="#live-activity">Live activity</a></nav>
+  <header class="topbar"><div><h1>Weather Trader</h1><p class="subtitle">Five cities · one account</p></div><div class="top-right"><span id="connection" class="connection" role="status"><span class="dot"></span><span id="connection-text">Connecting</span></span><button id="refresh" class="refresh" type="button" aria-label="Refresh dashboard">Refresh</button></div></header>
   <div id="banner" class="banner" role="status"></div>
   <section class="decision-card" aria-labelledby="decision-title"><h2 id="decision-title">Checking trader…</h2><p id="decision-explanation">Reading the latest records.</p><p class="decision-next" id="decision-next"></p></section>
-  <div class="desk-strip" id="desk-strip"></div>
+  <div class="desk-strip" id="desk-strip" hidden></div>
+  <section class="panel reserve-panel" aria-labelledby="reserve-title"><div class="panel-head"><div><h2 id="reserve-title">Protected balance</h2><p class="panel-subtitle">Cash kept out of new purchases</p></div></div><form id="reserve-form"><label for="reserve-amount">Protect ($)</label><input id="reserve-amount" type="number" min="0" max="999999999.99" step="0.01" inputmode="decimal" placeholder="0.00" required><button id="reserve-save" type="submit" disabled>Save</button><span id="reserve-status" role="status" aria-live="polite">Checking…</span></form><p class="reserve-note">Applies across all cities. Existing positions stay open; pending orders and risk limits still count.</p></section>
+  <section class="panel daily-highs-panel" id="daily-highs" aria-labelledby="daily-highs-title"><div class="panel-head"><div><h2 id="daily-highs-title">Daily highs</h2><p class="panel-subtitle">Observed high and settled high · all five cities</p></div><span class="count" id="daily-highs-count">Checking</span></div><div class="input-filter" aria-label="Settlement report day"><button id="highs-current" aria-pressed="true">Current market day</button><button id="highs-previous" aria-pressed="false">Previous market day</button></div><div id="daily-highs-grid" class="daily-highs-grid"></div><p class="daily-highs-note">Literal METAR highs and the market’s NWS report. Preliminary reports can change.</p></section>
+  <details class="desk-details" id="desk-details"><summary>Details <span>Risk, inputs and strategy checks</span></summary>
   <section class="panel capital-panel" aria-labelledby="capital-title"><div class="panel-head"><h2 id="capital-title">Capital &amp; risk</h2><span id="capital-status">Checking…</span></div><div id="capital-content"></div></section>
-  <section class="panel reserve-panel" aria-labelledby="reserve-title"><div class="panel-head"><div><h2 id="reserve-title">Protected balance</h2><p class="panel-subtitle">Cash the bot must leave out of new trades · shared across all five cities</p></div></div><form id="reserve-form"><label for="reserve-amount">Keep protected ($)</label><input id="reserve-amount" type="number" min="0" max="999999999.99" step="0.01" inputmode="decimal" placeholder="0.00" required><button id="reserve-save" type="submit" disabled>Save</button><span id="reserve-status" role="status" aria-live="polite">Checking…</span></form><p class="reserve-note">$0 makes all eligible cash available. Changes apply to new spending without a restart. Existing positions stay open; orders already sent may still fill. Pending commitments and concentration limits still apply.</p></section>
-  <section class="panel daily-highs-panel" id="daily-highs" aria-labelledby="daily-highs-title"><div class="panel-head"><div><h2 id="daily-highs-title">Daily highs</h2><p class="panel-subtitle">Observed high and settled high · all five cities</p></div><span class="count" id="daily-highs-count">Checking</span></div><div class="input-filter" aria-label="Settlement report day"><button id="highs-current" aria-pressed="true">Current market day</button><button id="highs-previous" aria-pressed="false">Previous market day</button></div><div id="daily-highs-grid" class="daily-highs-grid"></div><p class="daily-highs-note">Observed high includes available five-minute readings. Settled high is the NWS CLI value for the market’s exact station and standard-time day. Preliminary reports may be revised.</p></section>
   <section class="panel strategy-panel" id="strategies" aria-labelledby="strategies-title"><div class="panel-head"><div><h2 id="strategies-title">Trading strategies</h2><p class="panel-subtitle">Shared account · Kelly sizing · outcome concentration limits</p></div><span class="count" id="strategies-count">Checking</span></div><div id="strategy-roster"></div></section>
   <section class="panel input-panel" id="data-inputs" aria-labelledby="inputs-title"><div class="panel-head"><div><h2 id="inputs-title">Data inputs</h2><p class="panel-subtitle">Account, markets and weather · actual trader inputs</p></div><span class="count" id="inputs-count">Checking</span></div><div id="inputs-overview" class="input-overview" role="status"></div><div class="input-filter"><button type="button" id="inputs-all" aria-pressed="true">All inputs</button><button type="button" id="inputs-attention" aria-pressed="false">Needs attention</button></div><div id="inputs-list" class="input-list"></div><details class="input-cities" id="input-city-details"><summary>All five cities · same-day and next-day readiness</summary><div id="inputs-matrix" class="input-matrix"></div></details></section>
   <section class="primary-grid" id="live-activity" aria-label="Live feed">
-    <article class="panel feed-panel"><div class="panel-head"><div><h2>Live feed</h2><p class="panel-subtitle">Inputs and decisions · past 10 minutes</p></div><span class="count" id="feed-count">—</span></div><div class="feed-toolbar"><label>City<select id="feed-city"><option value="ALL">All cities</option></select></label><label>Strategy<select id="feed-strategy"><option value="ALL">All strategies</option></select></label><span class="feed-live"><span class="dot"></span><span id="feed-live-text">Streaming</span></span></div><div id="feed-content"></div></article>
+    <article class="panel feed-panel"><div class="panel-head"><div><h2>Recent evaluations</h2><p class="panel-subtitle">Checks and provisional estimates · these are not orders</p></div><span class="count" id="feed-count">—</span></div><div class="feed-toolbar"><label>City<select id="feed-city"><option value="ALL">All cities</option></select></label><label>Strategy<select id="feed-strategy"><option value="ALL">All strategies</option></select></label><span class="feed-live"><span class="dot"></span><span id="feed-live-text">Streaming</span></span></div><div id="feed-content"></div></article>
   </section>
   <details class="detail-drawer" id="strategy-guide"><summary>Strategy guide · meanings and inputs <span id="strategy-guide-status">—</span></summary><div id="strategy-guide-content"></div></details>
+  </details>
   <footer class="footer" id="last-update">Connecting to live updates…</footer>
 </div></main>
 <script>
@@ -517,6 +518,10 @@ function renderKelly(k){
 }
 function recordFresh(stamp,limit){const age=Date.now()-Number(stamp)/1e6;return present(stamp)&&Number.isFinite(age)&&age>=-5000&&age<=limit*1000;}
 let latest=null,connected=false,inFlight=false,lastSuccess=0;
+function riskPauseReason(reason){
+ const labels={PEAK_DRAWDOWN_10_PERCENT:'Drawdown protection is on. The peak loss limit was reached.',DAILY_DRAWDOWN_5_PERCENT:'Drawdown protection is on. The daily loss limit was reached.'};
+ return labels[reason]||'Risk checks are holding new purchases: '+String(reason).replaceAll('_',' ').toLowerCase()+'.';
+}
 function render(data){
  const a=data.account||{},p=data.process||{},k=data.kelly||{},retained=data.retained,t=data.performance?.total||{};
  const fresh=recordFresh(p.heartbeatNs,90),accountDisplayLimit=Math.max(Number(a.maxAgeSeconds)||90,20),accountFresh=recordFresh(a.observedNs,accountDisplayLimit);
@@ -527,16 +532,18 @@ function render(data){
  else if(['HALTED','ERROR'].includes(p.status)){title='Trader needs attention';reason=plainReason(p.reason||k.reason);next='New entries are paused.';}
  else if(!p.running){title='Trader is stopped';reason='No new trades are being placed by this program.';next='';}
  else if(!fresh){title='Trader update delayed';reason='Waiting for a current heartbeat.';next='';}
- else if(paused){title='New buys paused';reason='The strategy upgrade has not been released.';next='Trader running · no new purchases.';}
+ else if(accountFresh&&data.capital?.fresh&&data.capital?.newRiskHoldReason){title='New purchases paused';reason=riskPauseReason(data.capital.newRiskHoldReason);next='The trader is running. Exits and account checks continue.';}
+ else if(paused){title='New purchases paused';reason='New buying is disabled in the current settings.';next='The trader continues checking existing positions.';}
  else if(retained?.runtimeStatus==='HOLD'){title='Waiting for inputs';reason=plainReason(retained.runtimeReason);next='New entries wait for complete source and account checks.';}
  else if(!accountFresh){title='Waiting for account refresh';reason='Balances and positions need a fresh complete check.';next='New entries require current account data.';}
+ else if(data.capital&&(!data.capital.fresh||!data.capital.available)){title='Waiting for risk refresh';reason='Current risk checks are not confirmed.';next=data.capital.newRiskHoldReason?'Last recorded: '+riskPauseReason(data.capital.newRiskHoldReason):'Waiting for a current account and risk check.';}
  else if(retained?.accountStatus==='RECONCILED'&&present(a.cashAboveReserveUSD)&&Number(a.cashAboveReserveUSD)===0){title='Watching markets · reserve protected';reason=`No buying power is available above your protected ${money(a.protectedReserveUSD)}.`;next='New purchases wait for available capital. Existing positions can still be evaluated for exits.';}
- else if(retained){title='Running · scheduled strategy checks';reason='Entries and hedges follow the released strategy and risk checks.';const lastCheck=Math.max(...(retained.botRoutes||[]).map(r=>r.lastEvaluatedNs||r.decisionNs||0),retained.observedNs||0);next=lastCheck?'Latest strategy check '+ageText(lastCheck)+'.':'No eligible decision recorded yet.';}
+ else if(retained){title='Watching markets';reason='New purchases require an eligible forecast, price and available capital.';const lastCheck=Math.max(...(retained.botRoutes||[]).map(r=>r.lastEvaluatedNs||r.decisionNs||0),retained.observedNs||0);next=lastCheck?'Latest strategy check '+ageText(lastCheck)+'.':'No eligible decision recorded yet.';}
  else if(!decisionFresh){title='Evaluation delayed';reason='Waiting for fresh market and model inputs.';next='';}
  const exitCheck=retained?.exitEvaluation;
  if(connected&&p.running&&fresh&&recordFresh(exitCheck?.observedNs,90)&&exitCheck.near99Count>0){next+=` Latest exit review: ${exitCheck.near99Count} at the 99¢ trigger; ${exitCheck.heldByValueCount} held because selling was worth less. Reinvestment benefit is not yet included.`;}
  $('decision-title').textContent=title;$('decision-explanation').textContent=reason;$('decision-next').textContent=next;
- $('banner').textContent=!accountFresh?(p.running?'Account refresh needed before new entries.':'Trader stopped. Input status is from the last run.'):'';$('banner').classList.toggle('show',!accountFresh);
+ $('banner').classList.remove('show');
  const version=String(p.release||'').match(/-r(\d+)(?:-|$)/)?.[1];
  $('desk-strip').textContent=(p.running?(p.release===p.availableRelease?'Published release running':'Release update pending'):'Trader stopped · selected '+(p.availableRelease||'unknown'))+(p.running&&version?' · r'+version:'');
  renderCapital(data.capital);
@@ -550,7 +557,7 @@ function render(data){
 }
 function setConnection(value){connected=value;$('connection').className='connection '+(value?'connected':'disconnected');$('connection-text').textContent=value?'Live · 5s refresh':'Reconnecting'}
 window.addEventListener('capital-setting-saved',()=>refresh());
-async function refresh(){if(inFlight)return;inFlight=true;$('refresh').disabled=true;const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),5000);try{const response=await fetch('/api/status',{cache:'no-store',signal:controller.signal,headers:{Accept:'application/json'}});if(!response.ok)throw Error('Status unavailable');const data=await response.json();if(!data||typeof data!=='object'||!Array.isArray(data.cities))throw Error('Invalid status');latest=data;lastSuccess=Date.now();setConnection(true);render(data)}catch{setConnection(false);if(latest)render(latest);else{$('banner').textContent='The Mac is not connected yet. It will reconnect automatically.';$('banner').classList.add('show')}}finally{clearTimeout(timer);inFlight=false;$('refresh').disabled=false}}
+async function refresh(){if(inFlight)return;inFlight=true;$('refresh').disabled=true;const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),5000);try{const response=await fetch('/api/status',{cache:'no-store',signal:controller.signal,headers:{Accept:'application/json'}});if(!response.ok)throw Error('Status unavailable');const data=await response.json();if(!data||typeof data!=='object'||!Array.isArray(data.cities))throw Error('Invalid status');latest=data;lastSuccess=Date.now();setConnection(true);render(data)}catch{setConnection(false);if(latest)render(latest);else{$('banner').textContent='Waiting for your Mac. Reconnecting automatically.';$('banner').classList.add('show')}}finally{clearTimeout(timer);inFlight=false;$('refresh').disabled=false}}
 for(const [id,offset] of [['highs-current',0],['highs-previous',-1]])$(id).addEventListener('click',()=>{dailyHighOffset=offset;if(latest)renderDailyHighs(latest.observedHighs,latest.generatedAtNs,latest.settlementHighs,latest.nwsHourlyHighs)});
 $('inputs-all').addEventListener('click',()=>{inputAttentionOnly=false;if(latest)renderInputStatus(latest.inputStatus)});
 $('inputs-attention').addEventListener('click',()=>{inputAttentionOnly=true;if(latest)renderInputStatus(latest.inputStatus)});
@@ -571,7 +578,7 @@ for(const control of [$('feed-city'),$('feed-strategy')]){
 }
 $('feed-city').addEventListener('change',()=>{if(latest)renderFeed(latest,true)});
 $('feed-strategy').addEventListener('change',()=>{if(latest)renderFeed(latest,true)});
-function openLinkedSection(){const id=location.hash.slice(1);if(['positions','performance','strategy-guide'].includes(id)&&$(id))$(id).open=true;}
+function openLinkedSection(){const id=location.hash.slice(1);if(['strategies','data-inputs','live-activity','strategy-guide'].includes(id))$('desk-details').open=true;if(['positions','performance','strategy-guide','desk-details'].includes(id)&&$(id))$(id).open=true;}
 window.addEventListener('hashchange',openLinkedSection);openLinkedSection();
 for(const section of ['positions'])$(section+'-content')?.addEventListener('click',event=>{
  const summary=event.target.closest('summary'),card=summary?.parentElement;
