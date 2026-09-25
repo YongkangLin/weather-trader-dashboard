@@ -161,7 +161,8 @@ function renderProductDesk(data){
   const title=isBTC?'Bitcoin':'Weather';
   let state=!supported?'Update required':!applied?'Applying setting':enabled?'Entries enabled':'Entries paused';
   if(!live&&supported)state='Service stopped · '+(enabled?'enabled when started':'paused');
-  const reason=isBTC?(recordFresh(btc.atNs,30)?({USER_PAUSED_BTC:'New BTC entries are paused.',OUTSIDE_LAST_FIVE_MINUTES:'Waiting for the final five-minute entry window.',BTC_METADATA_PENDING:'Waiting for the next BTC contract.'}[btc.reason]||String(btc.reason||btc.status||'Watching').replaceAll('_',' ').toLowerCase()):'Waiting for BTC runtime'):
+  const btcReasonKey=String(btc.reason||'').toUpperCase();
+  const reason=isBTC?(recordFresh(btc.atNs,30)?({USER_PAUSED_BTC:'New BTC entries are paused.',OUTSIDE_LAST_FIVE_MINUTES:'Waiting for the final five-minute entry window.',OUTSIDE_TABLE_TIME_WINDOW:'Final five-minute window open · this route quotes only with 61–180 seconds remaining.',BTC_METADATA_PENDING:'Waiting for the next BTC contract.'}[btcReasonKey]||plainReason(btc.reason||btc.status||'Watching')):'Waiting for BTC runtime'):
     enabled?'Five city forecasts · current weather strategy':'New entries paused; existing positions stay monitored';
   const stat=(label,value)=>`<div><dt>${escapeHTML(label)}</dt><dd>${value==null?'—':escapeHTML(money(value))}</dd></div>`;
   const risk=data.productRisk?.products?.[id];
