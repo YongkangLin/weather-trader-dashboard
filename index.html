@@ -496,7 +496,8 @@ function tickLiveClock(){
  const a=latest.account||{},generated=Number(latest.generatedAtNs),latency=Number.isFinite(generated)?Math.max(0,(Date.now()-generated/1e6)/1000):null;
  if($('live-latency'))$('live-latency').textContent=latency===null?'—':latency<10?latency.toFixed(1)+'s':Math.round(latency)+'s';
  if($('live-latency-note'))$('live-latency-note').textContent=lastSuccess?`Last packet ${Math.max(0,(Date.now()-lastSuccess)/1000).toFixed(0)}s ago`:'Waiting for stream';
- if($('last-update'))$('last-update').textContent='Account '+ageText(a.observedNs)+' · stream packet '+ageText(latest.generatedAtNs)+' · '+(connected?'connected':'reconnecting');
+ const p=latest.process||{};
+ if($('last-update'))$('last-update').textContent='Account '+ageText(a.observedNs)+' · trader heartbeat '+ageText(p.heartbeatNs)+' · '+(connected?'connected':'reconnecting');
 }
 function renderStrategyGuide(data){
  const rows=(data.performance?.strategyGuide||[]).filter(r=>r.status==='CONFIGURED'),liveIds=new Set(recentFeedRows(feedRows(data)).filter(r=>r.kind==='DECISION').map(r=>r.strategy));
