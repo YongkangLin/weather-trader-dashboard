@@ -58,6 +58,7 @@ button:disabled { cursor: default; }
 .decision-card .decision-next { margin-top: 4px; font-size: 12px; color: var(--muted); }
 .decision-card[data-tone=alert] { background: #fff8ef; }
 .decision-card[data-tone=alert] h2 { color: #8b4e2f; }
+.btc-status-countdown { margin: 0 0 8px !important; color: #263f35 !important; font-size: 18px !important; font-weight: 700; line-height: 1.25 !important; letter-spacing: -.25px; font-variant-numeric: tabular-nums; }
 .desk-strip[hidden] { display: none; }
 .panel { border: 1px solid var(--line); border-radius: 12px; box-shadow: none; }
 .reserve-panel { min-width: 0; padding: 22px 24px; margin: 0; border: 0; border-left: 1px solid var(--line); border-radius: 0; background: #fafbf8; }

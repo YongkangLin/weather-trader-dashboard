@@ -122,6 +122,20 @@ function renderSharedReserve(data){
  el.innerHTML=`<dl>${values.map(([label,value])=>`<div><dt>${escapeHTML(label)}</dt><dd>${escapeHTML(money(value))}</dd></div>`).join('')}</dl><p>One total reserve, then your saved split. Existing exposure and each trader’s own risk checks limit new orders.${r.capitalBalanceBasis!=='TOTAL_TRADABLE_BALANCE_V1'&&String(data.releaseUpdate?.releaseId||'').includes('total-tradable')?' The prepared Update switches both traders to your total tradable balance.':''}${c.reserveDiffersFromAccount?' Saved reserve change is awaiting trader recalculation.':''}${!c.fresh?' Last reconciled account values; awaiting a fresh check.':''}</p>`;
 }
 let productControlState=null, traderServiceState=null, productBusy=false, productLatest=null;
+function btcCountdownText(entryStartsNs,endNs,nowMs=Date.now()){
+ const entry=Number(entryStartsNs)/1e6,end=Number(endNs)/1e6;
+ if(!Number.isFinite(entry)||!Number.isFinite(end)||entry<=0||end<=entry)return 'Waiting for the next contract clock';
+ const seconds=target=>Math.max(0,Math.ceil((target-nowMs)/1000));
+ const clock=value=>`${Math.floor(value/60)}:${String(value%60).padStart(2,'0')}`;
+ if(nowMs<entry)return `Entry window opens in ${clock(seconds(entry))}`;
+ if(nowMs<end)return `Contract ends in ${clock(seconds(end))}`;
+ return 'Contract ended · loading the next market';
+}
+function tickBtcCountdown(){
+ const el=document.querySelector('[data-btc-countdown]');
+ if(!el)return;
+ el.textContent=btcCountdownText(el.dataset.entryStartsNs,el.dataset.endNs);
+}
 function bitcoinStatus(data,controls){
  const p=data.process||{},b=data.btc||{},risk=data.productRisk?.products?.btc,why=String(b.reason||''),whyKey=why.toUpperCase();
  const state=(title,reason,next='',tone='waiting')=>({title,reason,next,tone});
@@ -180,9 +194,11 @@ function renderProductDesk(data){
   const positions=(a?.positions||[]).map(p=>`<li><span title="${escapeHTML(p.marketSlug)}">${escapeHTML(p.marketSlug)}</span><strong>${escapeHTML(p.side)} · ${escapeHTML(p.quantity)} · ${money(p.costUSD)}</strong></li>`).join('');
   const orders=(a?.orders||[]).slice(-10).reverse().map(o=>`<li><span title="${escapeHTML(o.marketSlug)}">${escapeHTML(o.marketSlug)}</span><strong>${escapeHTML(o.status||'Unknown')}</strong></li>`).join('');
   const w=isBTC?bitcoinStatus(data,controls):(data.weatherStatus||{});
-  const statusBlock=`<section class="product-trader-status" data-tone="${escapeHTML(w.tone||'waiting')}" aria-label="${title} status"><span class="status-kicker"><span class="status-dot"></span>${title} status</span><h4>${escapeHTML(w.title||'Checking trader…')}</h4><p>${escapeHTML(w.reason||reason)}</p>${w.next?`<p class="trader-status-next">${escapeHTML(w.next)}</p>`:''}</section>`;
+  const countdown=isBTC?`<p class="btc-status-countdown" data-btc-countdown data-entry-starts-ns="${escapeHTML(btc.entryStartsNs||'')}" data-end-ns="${escapeHTML(btc.endNs||'')}">${escapeHTML(btcCountdownText(btc.entryStartsNs,btc.endNs))}</p>`:'';
+  const statusBlock=`<section class="product-trader-status" data-tone="${escapeHTML(w.tone||'waiting')}" aria-label="${title} status"><span class="status-kicker"><span class="status-dot"></span>${title} status</span><h4>${escapeHTML(w.title||'Checking trader…')}</h4>${countdown}<p>${escapeHTML(w.reason||reason)}</p>${w.next?`<p class="trader-status-next">${escapeHTML(w.next)}</p>`:''}</section>`;
   return `<article class="product-card" data-product="${id}"><div class="product-card-head"><div><span class="product-symbol">${isBTC?'₿':'☀'}</span><h3>${title}</h3></div><span class="product-pill ${enabled&&applied&&live?'on':''}">${escapeHTML(state)}</span></div><p class="product-scope">${escapeHTML(windowText)}</p>${metrics}<p class="product-pnl-note">${escapeHTML(pnlNote)}</p>${riskText}${statusBlock}<button type="button" class="product-toggle ${enabled?'pause':'enable'}" data-product="${id}" ${!supported||productBusy?'disabled':''}>${enabled?'Pause '+title+' entries':'Enable '+title+' entries'}</button><div class="product-update" data-update-product="${id}" role="region" aria-label="${title} software update"><button type="button" data-product-update="${id}" disabled>Checking update…</button><p data-update-note></p></div><details data-product="${id}" ${opened.has(id)?'open':''}><summary>${a?.orderCount??'—'} orders · ${a?.positions?.length??'—'} open positions${partial?' · '+a.pendingMarkets+' P&L pending':''}</summary><h4>Positions</h4><ul>${positions||'<li>No recorded open positions</li>'}</ul><h4>Recent orders</h4><ul>${orders||'<li>No recorded orders</li>'}</ul><p>${a?.accountingStatus==='INCOMPLETE_HISTORY'?'Some historical fills lack complete evidence. Only known amounts are shown.':'P&L uses owned fills, actual fees and matched settlement receipts.'}</p></details></article>`;
  }).join('');
+ tickBtcCountdown();
  window.dispatchEvent(new Event('product-cards-rendered'));
  el.querySelectorAll('.product-toggle').forEach(button=>button.addEventListener('click',()=>setProduct(button.dataset.product)));
  const message=document.getElementById('product-message');
