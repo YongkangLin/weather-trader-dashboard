@@ -177,7 +177,10 @@ function renderProductDesk(data){
  window.dispatchEvent(new Event('product-cards-rendered'));
  el.querySelectorAll('.product-toggle').forEach(button=>button.addEventListener('click',()=>setProduct(button.dataset.product)));
  const message=document.getElementById('product-message');
- if(!productBusy)message.textContent=!supported?'Install the available update to control both traders. BTC starts paused.':'Enabling permits real trades after account, source and risk checks. Pausing stops new submissions; resting quotes can fill until expiry. Positions continue to reconcile.';
+ if(!productBusy)message.textContent=traderServiceState?.startError?
+  `Start failed: ${traderServiceState.startError}`:
+  traderServiceState?.starting?'Starting the trading service…':
+  !supported?'Install the available update to control both traders. BTC starts paused.':'Enabling permits real trades after account, source and risk checks. Pausing stops new submissions; resting quotes can fill until expiry. Positions continue to reconcile.';
  const service=document.getElementById('trader-service');
  if(traderServiceState){
   service.disabled=productBusy||traderServiceState.starting;
