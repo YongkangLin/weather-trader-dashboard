@@ -51,19 +51,29 @@ body{font-size:14px;color:#20324a}main{margin:0;width:100%;padding:26px 22px}.ma
 
 .input-panel{margin:16px 0 20px}.input-panel .panel-head{align-items:flex-start}.input-overview{padding:0 20px 12px;font-size:12px;color:#65778f}.input-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;padding:0 20px 18px}.input-item{padding:12px;border:1px solid var(--line);border-radius:9px;min-width:0}.input-item summary{cursor:pointer;list-style:none}.input-item summary strong{font-size:12px;display:block}.input-item summary small{display:block;color:var(--muted);margin-top:5px;font-size:10px}.input-item p{font-size:11px;color:#65778f}.input-item .input-badge{float:right;margin:0 0 5px 5px}.input-badge{display:inline-block;background:#edf1f6;border-radius:5px;padding:3px 6px;font-size:10px;color:#5f718b;white-space:nowrap}.input-badge.good{background:#e6f4ed;color:#167553}.input-badge.warn{background:#fff0db;color:#975e12}.input-badge.bad{background:#fce9eb;color:#ae3644}.input-detail-line{font-size:10px;margin:7px 0;padding-top:6px;border-top:1px solid var(--line);color:#60748f;overflow-wrap:anywhere}.input-cities{padding:0 20px 18px}.input-cities>summary{cursor:pointer;font-size:12px;color:#3a5577}.input-matrix{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin-top:12px}.input-cell{border:1px solid var(--line);border-radius:9px;padding:12px;font-size:11px}.input-cell h3{font-size:12px;margin:0 0 8px}.input-cell p{margin:8px 0;color:#63758e}.input-cell .input-badge{margin-top:5px}.input-cell small{display:block;color:#8190a4;margin-top:6px}.input-release{overflow-wrap:anywhere;font-size:11px;color:#7b899c;margin-top:6px}@media(max-width:1100px){.input-list{grid-template-columns:repeat(2,minmax(0,1fr))}.input-matrix{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:620px){.input-list,.input-matrix{grid-template-columns:1fr}.input-list,.input-cities{padding-left:12px;padding-right:12px}.input-item summary strong{font-size:13px}}
 </style>
-<link rel="stylesheet" href="./panels.css?v=0148a2cc673d8b77">
-<script src="./panels.js?v=346fc23cc59245ab"></script>
+<link rel="stylesheet" href="./panels.css?v=12301d5c19f0b6e6">
+<script src="./panels.js?v=33d480806bd3dfa9"></script>
 </head>
 <body>
 <main id="overview"><div class="main-inner">
-  <header class="topbar"><div class="wordmark"><span class="app-symbol" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></span><div><h1>Polymarket Trader</h1><p class="subtitle">Weather + Bitcoin. Separate books.</p></div></div><div class="top-right"><span id="connection" class="connection" role="status"><span class="dot"></span><span id="connection-text">Connecting</span></span><button id="refresh" class="refresh" type="button" aria-label="Refresh dashboard" title="Refresh dashboard"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 6a8 8 0 0 1 13 2l1 4M4 12l1 4a8 8 0 0 0 13 2"/></svg></button></div></header>
+  <header class="topbar"><div class="wordmark"><span class="app-symbol" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 2184 2184" aria-hidden="true"><g transform="translate(0.000000,2184.000000) scale(0.100000,-0.100000)"
+fill="currentColor" stroke="none">
+<path d="M10445 15709 c-2667 -764 -4860 -1391 -4872 -1394 l-23 -5 0 -3345 0
+-3344 23 -7 c79 -25 9722 -2782 9724 -2780 2 1 2 2761 1 6133 l-3 6129 -4850
+-1387z m3915 -1910 c0 -1939 -1 -2041 -17 -2037 -160 43 -7100 2032 -7105
+2037 -7 6 7068 2037 7105 2040 16 1 17 -102 17 -2040z m-4263 -1806 c1976
+-565 3591 -1028 3590 -1029 -4 -4 -7141 -2045 -7169 -2051 l-28 -5 0 2056 c0
+1131 3 2056 8 2056 4 0 1623 -462 3599 -1027z m4263 -3864 l0 -2041 -27 5
+c-16 3 -1617 460 -3560 1016 -1942 556 -3535 1011 -3539 1011 -4 0 -4 3 0 7 5
+6 7095 2040 7119 2042 4 1 7 -918 7 -2040z"/>
+</g>
+</svg></span><div><h1>Polymarket Trader</h1><p class="subtitle">Weather + Bitcoin. Separate books.</p></div></div><div class="top-right"><span id="connection" class="connection" role="status"><span class="dot"></span><span id="connection-text">Connecting</span></span><button id="refresh" class="refresh" type="button" aria-label="Refresh dashboard" title="Refresh dashboard"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 6a8 8 0 0 1 13 2l1 4M4 12l1 4a8 8 0 0 0 13 2"/></svg></button></div></header>
   <section class="panel reserve-panel" aria-labelledby="reserve-title"><div class="panel-head"><div><h2 id="reserve-title">Shared reserve</h2><p class="panel-subtitle">Cash protected from both traders</p></div></div><form id="reserve-form"><label class="visually-hidden" for="reserve-amount">Shared reserve in dollars</label><div class="currency-input"><span aria-hidden="true">$</span><input id="reserve-amount" type="number" min="0" max="999999999.99" step="0.01" inputmode="decimal" placeholder="0.00" required></div><button id="reserve-save" type="submit" disabled>Save</button><span id="reserve-status" role="status" aria-live="polite">Checking…</span></form><p class="reserve-note">Applied once before splitting remaining capital: 50% Weather · 50% Bitcoin. Each trader has its own risk limits.</p></section>
   <section id="product-desk" class="product-desk" aria-label="Weather and Bitcoin traders"><div class="product-heading"><div><h2>Your traders</h2><p>Separate accounting and risk · 50/50 after reserve</p></div><button id="trader-service" type="button" disabled>Checking service…</button></div><div id="product-cards" class="product-cards"></div><p id="product-message" class="product-message" role="status">Reading trader controls…</p></section>
   <div id="banner" class="banner" role="status"></div>
-  <div class="overview-grid"><section class="decision-card" id="trader-status" data-tone="waiting" aria-labelledby="decision-title"><div class="status-kicker"><span class="status-dot"></span>Weather status</div><h2 id="decision-title">Checking trader…</h2><p id="decision-explanation">Reading the latest records.</p><p class="decision-next" id="decision-next"></p></section>
   <div class="desk-strip" id="desk-strip" hidden></div>
-</div>
   <section class="panel daily-highs-panel" id="daily-highs" aria-labelledby="daily-highs-title"><div class="panel-head"><div><h2 id="daily-highs-title">Daily highs</h2><p class="panel-subtitle">Five stations · observed and official highs</p></div><span class="count" id="daily-highs-count">Checking</span></div><div class="highs-toolbar"><div class="input-filter" aria-label="Settlement report day"><button id="highs-current" aria-pressed="true">Current day</button><button id="highs-previous" aria-pressed="false">Previous day</button></div><span class="highs-units">Degrees Fahrenheit</span></div><div id="daily-highs-grid" class="daily-highs-grid"></div><p class="daily-highs-note">Observed highs are provisional. Only a completed NWS daily report is shown as settled.</p></section>
+  <section class="panel btc-market-panel" aria-label="Bitcoin 15-minute market"><div id="btc-market-chart">Loading Bitcoin prices…</div></section>
   <footer class="footer" id="last-update">Connecting to live updates…</footer>
 </div></main>
 <script>
@@ -535,12 +545,13 @@ function render(data){
  else if(!decisionFresh){title='Evaluation delayed';reason='Waiting for fresh market and model inputs.';next='';}
  const exitCheck=retained?.exitEvaluation;
  if(connected&&p.running&&fresh&&recordFresh(exitCheck?.observedNs,90)&&exitCheck.near99Count>0){next+=` Latest exit review: ${exitCheck.near99Count} at the 99¢ trigger; ${exitCheck.heldByValueCount} held because selling was worth less. Reinvestment benefit is not yet included.`;}
- $('trader-status').dataset.tone=!connected?'waiting':['HALTED','ERROR'].includes(p.status)?'alert':!p.running?'stopped':title==='Watching markets'?'good':'waiting';
- $('decision-title').textContent=title;$('decision-explanation').textContent=reason;$('decision-next').textContent=next;
+ const statusTone=!connected?'waiting':['HALTED','ERROR'].includes(p.status)?'alert':!p.running?'stopped':title==='Watching markets'?'good':'waiting';
+ data.weatherStatus={title,reason,next,tone:statusTone};
  $('banner').classList.remove('show');
  const version=String(p.release||'').match(/-r(\d+)(?:-|$)/)?.[1];
  $('desk-strip').textContent=(p.running?(p.release===p.availableRelease?'Published release running':'Release update pending'):'Trader stopped · selected '+(p.availableRelease||'unknown'))+(p.running&&version?' · r'+version:'');
  renderProductDesk(data);
+ $('btc-market-chart').innerHTML=btcPriceChart(data.btcChart);
  renderDailyHighs(data.observedHighs,data.generatedAtNs,data.settlementHighs,data.nwsHourlyHighs);
  $('last-update').textContent='Account '+ageText(a.observedNs)+' · stream packet '+ageText(data.generatedAtNs)+' · '+(connected?'connected':'reconnecting');
 }
@@ -563,5 +574,5 @@ setInterval(()=>{if(!statusStream||statusStream.readyState!==EventSource.OPEN)re
 setInterval(tickLiveClock,1000);
 window.addEventListener('pagehide',()=>statusStream?.close());
 </script>
-<script src="./phone.js?v=aad0d78a937bbef7"></script></body>
+<script src="./phone.js?v=ba0c239a015c10ea"></script></body>
 </html>
