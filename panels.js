@@ -179,7 +179,11 @@ function renderProductDesk(data){
  const message=document.getElementById('product-message');
  if(!productBusy)message.textContent=!supported?'Install the available update to control both traders. BTC starts paused.':'Enabling permits real trades after account, source and risk checks. Pausing stops new submissions; resting quotes can fill until expiry. Positions continue to reconcile.';
  const service=document.getElementById('trader-service');
- if(traderServiceState){service.disabled=productBusy;service.textContent=traderServiceState.running?'Stop service':'Start service';}
+ if(traderServiceState){
+  service.disabled=productBusy||traderServiceState.starting;
+  service.textContent=traderServiceState.starting?'Starting…':traderServiceState.running?'Stop service':'Start service';
+  service.title=traderServiceState.startError||'';
+ }
 }
 let productPollInFlight=false;
 async function refreshProductControls(){
